@@ -123,8 +123,8 @@ def apply_rule_based_flags(df: pd.DataFrame) -> pd.DataFrame:
     # Rule 2: Large amount deviation (z-score > 3)
     df["rule_amount_anomaly"] = (df["amount_dev"].abs() > 3).astype(int)
 
-    # Rule 3: Cross-currency layering
-    df["rule_cross_currency"] = df["cross_currency_risk"]
+    # Rule 3: Cross-currency layering (recomputed from raw columns)
+    df["rule_cross_currency"] = (df["Receiving Currency"] != df["Payment Currency"]).astype(int)
 
     # Rule 4: Known laundering pattern type
     df["rule_known_pattern"] = (df["pattern_encoded"] > 0).astype(int)
@@ -182,7 +182,7 @@ def train_isolation_forest(split: str = "train", sample_size: int = 100_000) -> 
         raise ValueError("Feature computation returned empty dataframe")
 
     # Select features for IF
-    feature_cols = ["velocity_30d", "rolling_sum_30d", "amount_dev", "cross_currency_risk"]
+    feature_cols = ["velocity_30d", "rolling_sum_30d", "amount_dev", "rule_cross_currency"]
     X = df[feature_cols].fillna(0).replace([np.inf, -np.inf], 0)
 
     # Scale features
@@ -267,7 +267,7 @@ def score_anomaly(input: AnomalyInput) -> str:
     if input.use_pretrained:
         try:
             iso_forest, scaler = load_isolation_forest()
-            feature_cols = ["velocity_30d", "rolling_sum_30d", "amount_dev", "cross_currency_risk"]
+            feature_cols = ["velocity_30d", "rolling_sum_30d", "amount_dev", "rule_cross_currency"]
             X = df[feature_cols].fillna(0).replace([np.inf, -np.inf], 0)
             X_scaled = scaler.transform(X)
 
@@ -402,7 +402,7 @@ def batch_scan_top_accounts(input: BatchScanInput) -> str:
 
     try:
         iso_forest, scaler = load_isolation_forest()
-        feature_cols = ["velocity_30d", "rolling_sum_30d", "amount_dev", "cross_currency_risk"]
+        feature_cols = ["velocity_30d", "rolling_sum_30d", "amount_dev", "rule_cross_currency"]
         X = df[feature_cols].fillna(0).replace([np.inf, -np.inf], 0)
         X_scaled = scaler.transform(X)
         raw_scores = iso_forest.decision_function(X_scaled)

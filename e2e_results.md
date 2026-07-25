@@ -1,6 +1,6 @@
 # Sentinel AML — End-to-End Test Results
 
-**Run date:** 2026-07-25 13:59:23  
+**Run date:** 2026-07-25 23:51:42  
 **Result:** 20/20 tests passed  
 
 ---
@@ -9,26 +9,26 @@
 
 | # | ID | Category | Status | Time | Tools Invoked |
 |---|----|----|----|----|---|
-| 01 | T01 | Aggregation | ✅ PASS | 6.5s | `query_database` |
-| 02 | T02 | Aggregation | ✅ PASS | 6.5s | `get_schema`, `query_database` |
-| 03 | T03 | Aggregation | ✅ PASS | 5.3s | `query_database` |
-| 04 | T04 | Aggregation | ✅ PASS | 5.3s | `get_schema` |
-| 05 | T05 | EDA | ✅ PASS | 5.5s | `amount_profile` |
-| 06 | T06 | EDA | ✅ PASS | 5.4s | `currency_distribution` |
-| 07 | T07 | EDA | ✅ PASS | 4.7s | `data_quality_check` |
-| 08 | T08 | EDA | ✅ PASS | 4.8s | `top_accounts` |
-| 09 | T09 | Features | ✅ PASS | 7.2s | `compute_features` |
-| 10 | T10 | Investigation | ✅ PASS | 13.3s | `score_anomaly`, `classify_accounts`, `generate_investigation_summary` |
-| 11 | T11 | Multi-turn | ✅ PASS | 5.6s | `query_database` |
-| 12 | T12 | Multi-turn | ✅ PASS | 10.8s | `generate_investigation_summary` |
-| 13 | T13 | Investigation | ✅ PASS | 7.5s | `score_anomaly` |
-| 14 | T14 | Aggregation | ✅ PASS | 5.0s | `query_database` |
-| 15 | T15 | Aggregation | ✅ PASS | 7.4s | `get_schema`, `query_database` |
-| 16 | T16 | Edge Case | ✅ PASS | 7.9s | `batch_scan_top_accounts`, `data_quality_check` |
-| 17 | T17 | Edge Case | ✅ PASS | 13.2s | `score_anomaly`, `classify_accounts`, `generate_investigation_summary` |
-| 18 | T18 | Edge Case | ✅ PASS | 3.6s | — |
-| 19 | T19 | Edge Case | ✅ PASS | 8.7s | `batch_scan_top_accounts` |
-| 20 | T20 | Full Pipeline | ✅ PASS | 17.4s | `compute_features`, `score_anomaly`, `classify_accounts`, `generate_investigation_summary` |
+| 01 | T01 | Aggregation | ✅ PASS | 4.6s | `query_database` |
+| 02 | T02 | Aggregation | ✅ PASS | 6.2s | `get_schema`, `query_database` |
+| 03 | T03 | Aggregation | ✅ PASS | 4.5s | `query_database` |
+| 04 | T04 | Aggregation | ✅ PASS | 5.9s | `get_schema` |
+| 05 | T05 | EDA | ✅ PASS | 7.2s | `get_schema`, `query_database` |
+| 06 | T06 | EDA | ✅ PASS | 4.9s | `query_database` |
+| 07 | T07 | EDA | ✅ PASS | 8.0s | `get_schema`, `query_database` |
+| 08 | T08 | EDA | ✅ PASS | 4.5s | `query_database` |
+| 09 | T09 | Features | ✅ PASS | 6.7s | `compute_features` |
+| 10 | T10 | Investigation | ✅ PASS | 13.6s | `score_anomaly`, `classify_accounts`, `generate_investigation_summary` |
+| 11 | T11 | Multi-turn | ✅ PASS | 5.3s | `score_anomaly`, `classify_accounts`, `generate_investigation_summary`, `query_database` |
+| 12 | T12 | Multi-turn | ✅ PASS | 11.1s | `score_anomaly`, `classify_accounts`, `generate_investigation_summary`, `query_database` |
+| 13 | T13 | Investigation | ✅ PASS | 7.3s | `score_anomaly` |
+| 14 | T14 | Aggregation | ✅ PASS | 3.9s | `query_database` |
+| 15 | T15 | Aggregation | ✅ PASS | 8.1s | `get_schema`, `query_database` |
+| 16 | T16 | Edge Case | ✅ PASS | 8.3s | `batch_scan_top_accounts` |
+| 17 | T17 | Edge Case | ✅ PASS | 8.8s | `score_anomaly` |
+| 18 | T18 | Edge Case | ✅ PASS | 3.2s | — |
+| 19 | T19 | Edge Case | ✅ PASS | 8.0s | `batch_scan_top_accounts` |
+| 20 | T20 | Full Pipeline | ✅ PASS | 18.0s | `compute_features`, `score_anomaly`, `classify_accounts`, `generate_investigation_summary` |
 
 ---
 
@@ -38,14 +38,14 @@
 > How many transactions are in the database?
 
 **Thread:** `t-agg`  
-**Time:** 6.5s  
+**Time:** 4.6s  
 **Intent:** `aggregation`  
 
 **Tools invoked:** `query_database`  
-**Tools skipped:** `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools skipped:** `get_schema`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This was a pure aggregation question asking for a total transaction count, so a single read-only SQL query was sufficient. No schema lookup or AML investigation tools were needed.
+> This is a pure aggregation question asking for a simple row count, so a read-only SQL query was sufficient. No schema lookup or AML investigation tools were needed.
 
 **Checks:**
 
@@ -66,14 +66,14 @@ There are **5,078,345 transactions** in the database.
 > How many transactions are labeled as laundering? Show total count and a breakdown by payment format.
 
 **Thread:** `t-agg2`  
-**Time:** 6.5s  
+**Time:** 6.2s  
 **Intent:** `aggregation`  
 
 **Tools invoked:** `get_schema`, `query_database`  
-**Tools skipped:** `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools skipped:** `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This is a pure aggregation request asking for a total count and a categorical breakdown by payment format. I used get_schema first to confirm the exact table and column names, then query_database to compute the laundering count and grouped breakdown. Investigation, profiling, feature engineering, and anomaly-scoring tools were unnecessary.
+> This is a pure aggregation request asking for a total count and a categorical breakdown by payment format. I used get_schema first to confirm the exact column names, then query_database to run a read-only SQL aggregation. AML feature computation, anomaly scoring, classification, and narrative summary tools were unnecessary because no investigation or pattern detection was requested.
 
 **Checks:**
 
@@ -82,9 +82,9 @@ There are **5,078,345 transactions** in the database.
 
 **Response:**
 
-There are **5,177 laundering-labeled transactions** in total.
+There are **4,483 laundering transactions** in total.
 
-### Breakdown by payment format
+Breakdown by payment format:
 
 - **ACH:** 4,483
 - **Cheque:** 324
@@ -92,7 +92,7 @@ There are **5,177 laundering-labeled transactions** in total.
 - **Cash:** 108
 - **Bitcoin:** 56
 
-Note: the total count is the sum across all laundering transactions, and the breakdown shows how those laundering cases are distributed by payment format.
+Note: the percentages in the query output are the share of laundering transactions by format, but the total count shown in the result table is repeated on each row because of the grouped query. The true total is **4,483**.
 
 ---
 
@@ -102,14 +102,14 @@ Note: the total count is the sum across all laundering transactions, and the bre
 > Count total transactions where the Amount Paid is over $10,000.
 
 **Thread:** `t-agg3`  
-**Time:** 5.3s  
+**Time:** 4.5s  
 **Intent:** `aggregation`  
 
 **Tools invoked:** `query_database`  
-**Tools skipped:** `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools skipped:** `get_schema`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This was a pure aggregation request asking for a count with a simple numeric filter, so a single read-only SQL query was sufficient. No schema lookup was needed because the column name was already specified, and no AML investigation or profiling tools were relevant.
+> This is a pure aggregation/counting request, so a single read-only SQL query was sufficient. No schema lookup was needed because the column name was already specified, and no AML feature or anomaly tools were necessary.
 
 **Checks:**
 
@@ -118,7 +118,7 @@ Note: the total count is the sum across all laundering transactions, and the bre
 
 **Response:**
 
-Total transactions where **"Amount Paid" > 10,000**: **1,370,620**
+There are **1,370,620** total transactions where **"Amount Paid" > $10,000**.
 
 ---
 
@@ -128,14 +128,14 @@ Total transactions where **"Amount Paid" > 10,000**: **1,370,620**
 > What tables and columns are available in the database?
 
 **Thread:** `t-schema`  
-**Time:** 5.3s  
-**Intent:** `explanation`  
+**Time:** 5.9s  
+**Intent:** `profiling`  
 
 **Tools invoked:** `get_schema`  
-**Tools skipped:** `query_database`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools skipped:** `query_database`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> The user asked for the database structure, so the schema inspection tool was the correct choice. No aggregation, profiling, feature computation, or anomaly investigation was needed.
+> The user asked for the available tables and columns, which is a schema inspection task. get_schema is the correct tool because it directly returns table and column definitions; no SQL aggregation or AML investigation tools were needed.
 
 **Checks:**
 
@@ -144,116 +144,124 @@ Total transactions where **"Amount Paid" > 10,000**: **1,370,620**
 
 **Response:**
 
-Here are the available tables and columns in the database:
+Here’s the database schema:
 
 ### `raw`
-
 - **accounts**
-  - Bank Name
-  - Bank ID
-  - Account Number
-  - Entity ID
-  - Entity Name
+  - Bank Name (VARCHAR)
+  - Bank ID (BIGINT)
+  - Account Number (VARCHAR)
+  - Entity ID (VARCHAR)
+  - Entity Name (VARCHAR)
+
 - **transactions**
-  - Timestamp
-  - From Bank
-  - Account
-  - To Bank
-  - Account.1
-  - Amount Received
-  - Receiving Currency
-  - Amount Paid
-  - Payment Currency
-  - Payment Format
-  - Is Laundering
-  - pattern_type
+  - Timestamp (TIMESTAMP)
+  - From Bank (VARCHAR)
+  - Account (VARCHAR)
+  - To Bank (VARCHAR)
+  - Account.1 (VARCHAR)
+  - Amount Received (DOUBLE)
+  - Receiving Currency (VARCHAR)
+  - Amount Paid (DOUBLE)
+  - Payment Currency (VARCHAR)
+  - Payment Format (VARCHAR)
+  - Is Laundering (BIGINT)
+  - pattern_type (VARCHAR)
 
 ### `splits`
-
 - **metadata**
-  - train_row_cutoff
-  - val_row_cutoff
-  - train_start_ts
-  - test_end_ts
-  - train_ratio
-  - val_ratio
-  - test_ratio
+  - train_row_cutoff (INTEGER)
+  - val_row_cutoff (INTEGER)
+  - train_start_ts (VARCHAR)
+  - test_end_ts (VARCHAR)
+  - train_ratio (DECIMAL(2,1))
+  - val_ratio (DECIMAL(2,1))
+  - test_ratio (DECIMAL(2,1))
+
 - **train**
-  - Timestamp
-  - From Bank
-  - Account
-  - To Bank
-  - Account.1
-  - Amount Received
-  - Receiving Currency
-  - Amount Paid
-  - Payment Currency
-  - Payment Format
-  - Is Laundering
-  - pattern_type
+  - Timestamp (TIMESTAMP)
+  - From Bank (VARCHAR)
+  - Account (VARCHAR)
+  - To Bank (VARCHAR)
+  - Account.1 (VARCHAR)
+  - Amount Received (DOUBLE)
+  - Receiving Currency (VARCHAR)
+  - Amount Paid (DOUBLE)
+  - Payment Currency (VARCHAR)
+  - Payment Format (VARCHAR)
+  - Is Laundering (BIGINT)
+  - pattern_type (VARCHAR)
+
 - **validation**
-  - Timestamp
-  - From Bank
-  - Account
-  - To Bank
-  - Account.1
-  - Amount Received
-  - Receiving Currency
-  - Amount Paid
-  - Payment Currency
-  - Payment Format
-  - Is Laundering
-  - pattern_type
+  - Timestamp (TIMESTAMP)
+  - From Bank (VARCHAR)
+  - Account (VARCHAR)
+  - To Bank (VARCHAR)
+  - Account.1 (VARCHAR)
+  - Amount Received (DOUBLE)
+  - Receiving Currency (VARCHAR)
+  - Amount Paid (DOUBLE)
+  - Payment Currency (VARCHAR)
+  - Payment Format (VARCHAR)
+  - Is Laundering (BIGINT)
+  - pattern_type (VARCHAR)
+
 - **test**
-  - Timestamp
-  - From Bank
-  - Account
-  - To Bank
-  - Account.1
-  - Amount Received
-  - Receiving Currency
-  - Amount Paid
-  - Payment Currency
-  - Payment Format
-  - Is Laundering
-  - pattern_type
+  - Timestamp (TIMESTAMP)
+  - From Bank (VARCHAR)
+  - Account (VARCHAR)
+  - To Bank (VARCHAR)
+  - Account.1 (VARCHAR)
+  - Amount Received (DOUBLE)
+  - Receiving Currency (VARCHAR)
+  - Amount Paid (DOUBLE)
+  - Payment Format (VARCHAR)
+  - Is Laundering (BIGINT)
+  - pattern_type (VARCHAR)
 
 ---
 
 ## T05 — 📊 EDA  ✅ PASS
 
 **Query:**
-> What is the minimum, maximum, and average transaction amount?
+> What is the minimum, maximum, and average transaction amount per currency?
 
 **Thread:** `t-eda1`  
-**Time:** 5.5s  
-**Intent:** `profiling`  
+**Time:** 7.2s  
+**Intent:** `aggregation`  
 
-**Tools invoked:** `amount_profile`  
-**Tools skipped:** `query_database`, `get_schema`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools invoked:** `get_schema`, `query_database`  
+**Tools skipped:** `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This is an EDA/profiling request asking for minimum, maximum, and average transaction amounts. The amount_profile tool is specifically designed to return these statistics, broken out by currency to avoid misleading cross-currency aggregation. No SQL or investigation tools were needed.
+> This is a pure aggregation/profiling request asking for summary statistics by currency, so I used schema inspection to confirm the relevant columns and then a read-only SQL aggregation query. AML investigation and anomaly-scoring tools were unnecessary because no account-level investigation or pattern detection was requested.
 
 **Checks:**
 
-- ✅ amount_profile invoked
-- ✅ result contains dollar amounts
+- ✅ query_database invoked
+- ✅ result contains amounts
 
 **Response:**
 
-The transaction amounts vary by currency, so the dataset reports stats per currency rather than a single mixed-currency average.
+Here’s the minimum, maximum, and average transaction amount per currency, based on `"Amount Paid"`:
 
-A few examples:
-
-- US Dollar: min 0.01, max 16,620,608,535.74, average 367,153.78
-- Euro: min 0.01, max 13,463,989,346.24, average 263,134.47
-- Bitcoin: min 0.00, max 135,890.11, average 20.81
-
-If you want, I can also give you:
-
-- the overall amount profile for a specific split, or
-- the currency with the highest average transaction amount.
+| Currency | Min Amount | Max Amount | Avg Amount | Txn Count |
+|---|---:|---:|---:|---:|
+| Australian Dollar | 0.01 | 2,474,350,163.85 | 342,938.77 | 136,769 |
+| Bitcoin | 0.000001 | 135,890.107125 | 20.81 | 146,066 |
+| Brazil Real | 0.01 | 149,963,208,139.35 | 4,383,740.47 | 70,703 |
+| Canadian Dollar | 0.01 | 21,500,692,156.37 | 578,109.87 | 140,042 |
+| Euro | 0.01 | 13,463,989,346.24 | 263,134.47 | 1,168,297 |
+| Mexican Peso | 0.01 | 30,893,133,697.47 | 5,959,023.61 | 110,159 |
+| Ruble | 0.01 | 626,035,501,453.45 | 43,185,445.67 | 155,178 |
+| Rupee | 0.01 | 965,933,305,301.71 | 36,845,202.58 | 190,202 |
+| Saudi Riyal | 0.01 | 3,725,980,237.05 | 715,956.33 | 89,014 |
+| Shekel | 0.01 | 9,494,645,650.85 | 985,408.89 | 192,184 |
+| Swiss Franc | 0.01 | 3,576,835,693.12 | 322,642.26 | 234,860 |
+| UK Pound | 0.01 | 1,397,665,064.97 | 253,878.63 | 180,738 |
+| US Dollar | 0.01 | 16,620,608,535.74 | 367,153.78 | 1,895,172 |
+| Yen | 0.01 | 1,046,302,363,293.48 | 41,019,282.58 | 155,209 |
+| Yuan | 0.01 | 5,243,592,783.03 | 1,643,783.10 | 213,752 |
 
 ---
 
@@ -263,40 +271,41 @@ If you want, I can also give you:
 > Show me the currency distribution — which currencies are most common?
 
 **Thread:** `t-eda2`  
-**Time:** 5.4s  
+**Time:** 4.9s  
 **Intent:** `profiling`  
 
-**Tools invoked:** `currency_distribution`  
-**Tools skipped:** `query_database`, `get_schema`, `amount_profile`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools invoked:** `query_database`  
+**Tools skipped:** `get_schema`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This is a dataset profiling request asking for currency breakdowns, so the dedicated currency_distribution tool was the most direct and appropriate choice. I skipped SQL and investigation tools because no custom aggregation, schema inspection, anomaly scoring, or account-level analysis was needed.
+> This is a pure aggregation/profiling request asking for a currency breakdown, so a single read-only SQL query is sufficient. No schema lookup or AML anomaly tools were needed because there was no investigation or feature-engineering component.
 
 **Checks:**
 
-- ✅ currency_distribution invoked
+- ✅ query_database invoked
 - ✅ result mentions a currency
 
 **Response:**
 
-Here’s the currency distribution for both receiving and payment sides:
+Here’s the currency distribution by transaction count:
 
-### Most common currencies
+1. **US Dollar** — 1,895,172 transactions (**37.32%**)
+2. **Euro** — 1,168,297 (**23.01%**)
+3. **Swiss Franc** — 234,860 (**4.62%**)
+4. **Yuan** — 213,752 (**4.21%**)
+5. **Shekel** — 192,184 (**3.78%**)
+6. **Rupee** — 190,202 (**3.75%**)
+7. **UK Pound** — 180,738 (**3.56%**)
+8. **Yen** — 155,209 (**3.06%**)
+9. **Ruble** — 155,178 (**3.06%**)
+10. **Bitcoin** — 146,066 (**2.88%**)
+11. **Canadian Dollar** — 140,042 (**2.76%**)
+12. **Australian Dollar** — 136,769 (**2.69%**)
+13. **Mexican Peso** — 110,159 (**2.17%**)
+14. **Saudi Riyal** — 89,014 (**1.75%**)
+15. **Brazil Real** — 70,703 (**1.39%**)
 
-1. **US Dollar** — about **37%**
-2. **Euro** — about **23%**
-3. **Swiss Franc** — about **4.6–4.7%**
-4. **Yuan** — about **4.1–4.2%**
-5. **Shekel** — about **3.8%**
-6. **Rupee** — about **3.7–3.8%**
-7. **UK Pound** — about **3.6%**
-8. **Yen / Ruble** — about **3.0–3.1%**
-9. **Bitcoin** — about **2.9%**
-10. **Canadian Dollar / Australian Dollar** — about **2.7–2.8%**
-
-### Quick takeaway
-
-The dataset is heavily concentrated in **USD and EUR**, which together make up roughly **60%** of transactions on both receiving and payment sides.
+The most common currencies are **US Dollar** and **Euro**, which together make up about **60.33%** of all transactions.
 
 ---
 
@@ -306,29 +315,39 @@ The dataset is heavily concentrated in **USD and EUR**, which together make up r
 > Check the data quality — are there any null or missing values in the transaction table?
 
 **Thread:** `t-eda3`  
-**Time:** 4.7s  
+**Time:** 8.0s  
 **Intent:** `profiling`  
 
-**Tools invoked:** `data_quality_check`  
-**Tools skipped:** `get_schema`, `query_database`, `amount_profile`, `currency_distribution`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools invoked:** `get_schema`, `query_database`  
+**Tools skipped:** `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This was a data quality question specifically asking about null or missing values, so the dedicated data_quality_check tool was the most direct and sufficient choice. No schema lookup or SQL aggregation was needed because the tool already reports null counts across the transaction table.
+> This was a data quality profiling request focused on missing values in the transaction table. I first inspected the schema to confirm column names, then ran a read-only aggregation query to count nulls per column. No AML feature computation or anomaly scoring was needed because the user asked only about data completeness.
 
 **Checks:**
 
-- ✅ data_quality_check invoked
+- ✅ query_database invoked
 - ✅ result mentions null or clean
 
 **Response:**
 
-The transaction table looks clean: no null or missing values were found in any column.
+I checked the `raw.transactions` table for nulls across all columns, and there are **no missing values** in any field.
 
 Summary:
+- `Timestamp`: 0
+- `From Bank`: 0
+- `Account`: 0
+- `To Bank`: 0
+- `Account.1`: 0
+- `Amount Received`: 0
+- `Receiving Currency`: 0
+- `Amount Paid`: 0
+- `Payment Currency`: 0
+- `Payment Format`: 0
+- `Is Laundering`: 0
+- `pattern_type`: 0
 
-- All columns are marked clean
-- No missing values detected
-- No null-related data quality issues found
+So the transaction table appears complete with respect to null values.
 
 ---
 
@@ -338,34 +357,34 @@ Summary:
 > Who are the top 10 most active sender accounts by transaction count?
 
 **Thread:** `t-eda4`  
-**Time:** 4.8s  
+**Time:** 4.5s  
 **Intent:** `aggregation`  
 
-**Tools invoked:** `top_accounts`  
-**Tools skipped:** `query_database`, `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools invoked:** `query_database`  
+**Tools skipped:** `get_schema`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This was a pure aggregation request asking for the most active sender accounts by transaction count, so the dedicated top_accounts tool was the most direct and efficient choice. No schema inspection or broader investigation tools were needed because the answer did not require custom SQL, feature engineering, anomaly scoring, or narrative summarization.
+> This is a pure aggregation request asking for the top sender accounts by transaction count. A single read-only SQL query is sufficient, so no schema lookup or AML scoring tools were needed.
 
 **Checks:**
 
-- ✅ top_accounts invoked
-- ✅ result contains account-like tokens
+- ✅ query_database invoked
+- ✅ result non-empty
 
 **Response:**
 
-Here are the top 10 most active sender accounts by transaction count:
+Top 10 most active sender accounts by transaction count:
 
-1. 100428660 — 168,672 transactions  
-2. 1004286A8 — 103,018 transactions  
-3. 100428978 — 20,497 transactions  
-4. 1004286F0 — 18,663 transactions  
-5. 100428780 — 17,264 transactions  
-6. 1004289C0 — 16,794 transactions  
-7. 100428810 — 16,426 transactions  
-8. 1004287C8 — 14,174 transactions  
-9. 100428738 — 13,756 transactions  
-10. 100428A51 — 13,073 transactions
+1. 100428660 — 168,672
+2. 1004286A8 — 103,018
+3. 100428978 — 20,497
+4. 1004286F0 — 18,663
+5. 100428780 — 17,264
+6. 1004289C0 — 16,794
+7. 100428810 — 16,426
+8. 1004287C8 — 14,174
+9. 100428738 — 13,756
+10. 100428A51 — 13,073
 
 ---
 
@@ -375,14 +394,14 @@ Here are the top 10 most active sender accounts by transaction count:
 > Compute AML features for the training split and report the pattern type distribution.
 
 **Thread:** `t-feat1`  
-**Time:** 7.2s  
+**Time:** 6.7s  
 **Intent:** `features`  
 
 **Tools invoked:** `compute_features`  
-**Tools skipped:** `query_database`, `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools skipped:** `query_database`, `get_schema`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> The user asked specifically to compute AML features for the training split and report the pattern type distribution, which is directly handled by the compute_features tool. No schema lookup, SQL aggregation, anomaly scoring, or narrative investigation summary was needed.
+> The request was specifically to compute AML features for the training split and report the pattern type distribution, which is exactly what the compute_features tool is designed for. No database aggregation, single-account investigation, or risk classification was needed.
 
 **Checks:**
 
@@ -394,31 +413,24 @@ Here are the top 10 most active sender accounts by transaction count:
 Computed AML features for the training split.
 
 Pattern type distribution:
-
-- SCATTER-GATHER: 254 (20.1%)
-- GATHER-SCATTER: 216 (17.1%)
+- SCATTER-GATHER: 254 (20.2%)
+- GATHER-SCATTER: 215 (17.1%)
 - STACK: 183 (14.5%)
 - BIPARTITE: 141 (11.2%)
 - FAN-OUT: 137 (10.9%)
 - CYCLE: 136 (10.8%)
 - FAN-IN: 119 (9.4%)
-- RANDOM: 75 (5.9%)
+- RANDOM: 75 (6.0%)
 
 Additional feature summary:
-
-- Rows analyzed: 1,261 labeled rows
 - Mean velocity (30d): 1.5 txns/account
-- Mean rolling sum (30d): $6,202,701.85
+- Mean rolling sum (30d): $6,190,525.34
 - Mean amount deviation: -0.00
-- Cross-currency risk flagged: 0 rows (0.0%)
+- Cross-currency risk flagged rows: 0 (0.0%)
 
 Graph-based detection summary:
-
 - Graph size: 919 nodes, 737 edges
 - SCATTER-GATHER detected: True
-- CYCLE detected: False
-- GATHER-SCATTER detected: False
-- BIPARTITE detected: False
 - FAN-OUT accounts: 18
 - FAN-IN accounts: 4
 - STACK accounts: 2
@@ -431,14 +443,14 @@ Graph-based detection summary:
 > Investigate Account 8000EBD30 for money laundering patterns.
 
 **Thread:** `t-inv1`  
-**Time:** 13.3s  
+**Time:** 13.6s  
 **Intent:** `investigation`  
 
 **Tools invoked:** `score_anomaly`, `classify_accounts`, `generate_investigation_summary`  
-**Tools skipped:** `query_database`, `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `batch_scan_top_accounts`  
+**Tools skipped:** `query_database`, `get_schema`, `compute_features`, `batch_scan_top_accounts`  
 
 **Routing reasoning:**
-> This was an account-specific investigation request, so the correct workflow was to score the account for anomalies, classify the risk tier, and generate a plain-English AML summary. Aggregation, profiling, and dataset-wide scan tools were unnecessary because the user asked about one specific account rather than the whole dataset or a descriptive statistic.
+> This was a single-account AML investigation, so the correct workflow was to score the account for anomalies, classify the resulting risk tier, and generate a plain-English investigation summary. I skipped database aggregation and feature computation tools because the request was not a general profiling query and did not require manual feature engineering or dataset-wide scanning.
 
 **Checks:**
 
@@ -446,30 +458,27 @@ Graph-based detection summary:
 - ✅ score_anomaly invoked
 - ✅ generate_investigation_summary invoked
 - ✅ result mentions a risk level
-- ✅ EDA tools skipped
+- ✅ non-EDA tools skipped
 
 **Response:**
 
-Account **8000EBD30** is currently assessed as **LOW risk** for money laundering.
+Account **8000EBD30** is **LOW risk** for money laundering based on the current model output.
 
 ### What was found
-
 - **Transactions analyzed:** 2
-- **Composite anomaly score:** 0.287
-- **Isolation Forest score:** 0.418
+- **Composite anomaly score:** 0.286
+- **Isolation Forest score:** 0.415
 - **Rule-based score:** 0.200
-- **Triggered alerts:** High Velocity, High Volume
-- **Detected AML pattern:** None
+- **Triggered rules:** High Velocity, High Volume
+- **Matched AML patterns:** None identified
 
 ### Interpretation
-
-The account shows some unusual activity patterns, but the overall score is below the medium-risk threshold. There is **no evidence of a confirmed laundering typology** such as fan-out, fan-in, cycle, or layering.
+The account shows some activity-based alerts, but the overall score stays below the medium-risk threshold. With only 2 transactions and no detected laundering typology, there is **no strong evidence of structured money laundering behavior** at this time.
 
 ### Recommended action
-
-- Keep under routine monitoring
-- Review the two transactions briefly for business context
-- Escalate only if the behavior repeats or transaction values increase
+- **No immediate escalation**
+- Continue routine monitoring
+- Do a quick manual check if you want to confirm why the velocity/volume rules fired, especially since the reported total amount was $0.00
 
 ---
 
@@ -479,14 +488,14 @@ The account shows some unusual activity patterns, but the overall score is below
 > Now show me the top 5 receiver accounts for that same account.
 
 **Thread:** `t-inv1`  
-**Time:** 5.6s  
+**Time:** 5.3s  
 **Intent:** `aggregation`  
 
-**Tools invoked:** `query_database`  
-**Tools skipped:** `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools invoked:** `score_anomaly`, `classify_accounts`, `generate_investigation_summary`, `query_database`  
+**Tools skipped:** `get_schema`, `compute_features`, `batch_scan_top_accounts`  
 
 **Routing reasoning:**
-> This was a pure aggregation request asking for the top receiver accounts for a specific sender, so a single read-only SQL query was sufficient. Investigation and AML-scoring tools were skipped because the user did not ask for risk scoring or pattern detection, only a ranked receiver list.
+> This was a straightforward aggregation request asking for the top receiver accounts linked to a specific sender account. A read-only SQL query was sufficient, and no anomaly scoring, feature computation, or narrative investigation tools were needed.
 
 **Checks:**
 
@@ -495,14 +504,14 @@ The account shows some unusual activity patterns, but the overall score is below
 
 **Response:**
 
-Here are the top receiver accounts associated with sender account **8000EBD30**:
+Here are the top receiver accounts associated with **8000EBD30**:
 
-| Receiver Account | Transaction Count | Total Amount Paid |
+| Receiver Account | Transaction Count | Total Amount |
 |---|---:|---:|
 | 8000EBD30 | 1 | 3697.34 |
 | 8000F5030 | 1 | 146.66 |
 
-There are only **2 receiver accounts** linked to this sender in the data, so there aren’t 5 distinct receivers to show.
+There are only **2 receiver accounts** linked to this sender in the data, so there isn’t a full top 5 to display.
 
 ---
 
@@ -512,14 +521,14 @@ There are only **2 receiver accounts** linked to this sender in the data, so the
 > Based on what you found, generate a formal AML investigation summary for the account.
 
 **Thread:** `t-inv1`  
-**Time:** 10.8s  
+**Time:** 11.1s  
 **Intent:** `explanation`  
 
-**Tools invoked:** `generate_investigation_summary`  
-**Tools skipped:** `query_database`, `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`  
+**Tools invoked:** `score_anomaly`, `classify_accounts`, `generate_investigation_summary`, `query_database`  
+**Tools skipped:** `get_schema`, `compute_features`, `batch_scan_top_accounts`  
 
 **Routing reasoning:**
-> The user requested a formal AML investigation summary based on prior findings, so the appropriate tool was the plain-English summary generator. No additional scoring or database queries were needed because the relevant anomaly results and transaction context were already available.
+> The user requested a formal AML investigation summary based on previously gathered findings, so the appropriate tool was the narrative summary generator. I skipped database and scoring tools because no new analysis was required; the task was to convert existing results into a formal report.
 
 **Checks:**
 
@@ -531,38 +540,30 @@ There are only **2 receiver accounts** linked to this sender in the data, so the
 # AML Investigation Summary
 
 ## Risk Verdict: LOW
-
-The account **8000EBD30** presents a **low overall AML risk** based on the current detection results. The composite score of **0.287** remains below the medium-risk threshold, although the account did trigger activity-based alerts that warrant limited review.
+The account **8000EBD30** is assessed as **low risk** based on the composite score of **0.286**, which is below the medium-risk threshold. While the account triggered a small number of activity-based alerts, the overall transaction profile is limited and does not show a clear pattern consistent with known AML typologies.
 
 ## Triggered Rules and Business Meaning
-
 - **High Velocity**  
-  Indicates funds moved through the account quickly over a short period. In business terms, this can suggest rapid pass-through activity rather than normal account usage.
+  Indicates funds moved through the account quickly over a short period. In business terms, this can suggest rapid pass-through activity, but in this case the activity volume is very limited.
 
 - **High Volume**  
-  Indicates the account processed a relatively large amount of money compared with expected behavior. In business terms, this may reflect elevated transactional activity that should be checked against the customer profile.
+  Indicates the account processed a relatively large dollar amount compared with expected behavior. Here, the total amount is **$3,844.00**, which is notable but based on only two transactions.
 
 ## Matched AML Pattern Types
-
 - **None identified**  
-  No specific ground-truth AML typology was matched, such as fan-out, fan-in, cycle, or layering patterns.
+  No ground-truth AML typology was matched. There is no evidence of structured laundering behavior such as fan-out, fan-in, cycle, stack, scatter-gather, gather-scatter, or bipartite activity.
 
 ## Key Statistics
-
-- **Transactions analyzed:** 2  
-- **Total transaction amount:** **$3,844.00**  
-- **Velocity:** **High** based on triggered rule output, indicating rapid movement of funds within the observed activity window
-
-## Assessment
-
-The account shows **limited suspicious indicators** driven by transaction speed and volume, but the absence of a matched AML pattern and the low composite score reduce concern. With only two transactions analyzed, the current evidence is not sufficient to indicate a structured laundering typology.
+- **Transactions analyzed:** 2
+- **Total transaction amount:** **$3,844.00**
+- **Velocity:** Elevated relative to expected behavior, but observed across only two transactions
 
 ## Recommended Next Steps
-
-- Perform a **light-touch review** of the two transactions for source, destination, and business purpose.
-- Compare activity against the customer’s **expected profile** and historical behavior.
-- Check for any **related accounts or counterparties** that may show broader activity.
-- If no additional anomalies are found, **close as low priority** and continue routine monitoring.
+Given the **low-risk** assessment:
+1. **No immediate escalation required** based on the current data.
+2. **Continue routine monitoring** for additional activity that may establish a pattern.
+3. **Review future transactions** for repetition, increased frequency, or links to higher-risk counterparties.
+4. **Reassess if activity expands**, especially if the account begins showing sustained high velocity, higher volumes, or typology-consistent behavior.
 
 ---
 
@@ -572,14 +573,14 @@ The account shows **limited suspicious indicators** driven by transaction speed 
 > Score Account 8000EBD31 for anomalies using both Isolation Forest and rule-based detection.
 
 **Thread:** `t-inv2`  
-**Time:** 7.5s  
+**Time:** 7.3s  
 **Intent:** `investigation`  
 
 **Tools invoked:** `score_anomaly`  
-**Tools skipped:** `classify_accounts`, `generate_investigation_summary`, `compute_features`  
+**Tools skipped:** `query_database`, `get_schema`, `compute_features`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This was an account-level anomaly investigation request, so the correct first step was to run the anomaly scorer. I attempted the account across all available splits because the account was not found in the default split. Classification and summary generation were skipped because there were no scoring results to classify or explain.
+> This was a single-account anomaly investigation, so the correct first step was to run the anomaly scorer. Classification and narrative summary were skipped because the account had no matching transactions in any split, leaving no score or triggered rules to classify or explain.
 
 **Checks:**
 
@@ -588,13 +589,12 @@ The account shows **limited suspicious indicators** driven by transaction speed 
 
 **Response:**
 
-I couldn’t score account **8000EBD31** because it does not appear in any of the available splits (**train**, **validation**, or **test**). The anomaly scorer returned “No transactions found” for each split, so there’s no transaction history to evaluate with Isolation Forest or rule-based detection.
+I couldn’t score Account `8000EBD31` because no transactions were found for that account in any split (`train`, `validation`, or `test`).
 
-If you want, I can help you:
-
+If you want, I can:
 - check whether the account ID is mistyped,
-- search for a similar account ID,
-- or score a different account that exists in the dataset.
+- search for a close match,
+- or score a different account.
 
 ---
 
@@ -604,14 +604,14 @@ If you want, I can help you:
 > How many transactions have a different Receiving Currency versus Payment Currency? This is the cross-currency layering indicator.
 
 **Thread:** `t-cc`  
-**Time:** 5.0s  
+**Time:** 3.9s  
 **Intent:** `aggregation`  
 
 **Tools invoked:** `query_database`  
-**Tools skipped:** `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools skipped:** `get_schema`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This was a pure aggregation/count question, so a single read-only SQL query was sufficient. No schema lookup was needed because the relevant column names were already known, and no AML investigation or feature-scoring tools were necessary.
+> This is a pure aggregation/profiling question asking for a count of transactions matching a currency mismatch condition. A direct read-only SQL query is sufficient; no schema lookup or AML scoring/pattern tools were needed.
 
 **Checks:**
 
@@ -620,9 +620,7 @@ If you want, I can help you:
 
 **Response:**
 
-There are **72,170 transactions** where **Receiving Currency ≠ Payment Currency**.
-
-This is a useful **cross-currency layering indicator**, since it can suggest currency conversion activity that may be used to obscure fund flows.
+There are **72,170 transactions** where **Receiving Currency** differs from **Payment Currency**. This is a classic **cross-currency layering indicator**.
 
 ---
 
@@ -632,14 +630,14 @@ This is a useful **cross-currency layering indicator**, since it can suggest cur
 > How many transactions are labeled as FAN-OUT pattern? Also show the top 3 sender accounts for FAN-OUT transactions.
 
 **Thread:** `t-fanout`  
-**Time:** 7.4s  
+**Time:** 8.1s  
 **Intent:** `aggregation`  
 
 **Tools invoked:** `get_schema`, `query_database`  
-**Tools skipped:** `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
+**Tools skipped:** `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> This was a pure aggregation request: count FAN-OUT-labeled transactions and list the top sender accounts among those transactions. I used get_schema first to confirm the exact table and column names, then query_database to run read-only SQL for the count and ranking. Investigation, profiling, feature engineering, and anomaly-scoring tools were unnecessary.
+> This was a pure aggregation/profiling request: count transactions with a specific pattern label and list the top sender accounts among those transactions. I used get_schema first to confirm the relevant table and column names, then query_database to run read-only SQL. ML/anomaly tools were skipped because no feature computation or account-level investigation was needed.
 
 **Checks:**
 
@@ -648,12 +646,11 @@ This is a useful **cross-currency layering indicator**, since it can suggest cur
 
 **Response:**
 
-There are **343 FAN-OUT transactions** in the dataset.
+There are **343 transactions** labeled as **FAN-OUT**.
 
 Top 3 sender accounts for FAN-OUT transactions:
-
-1. **800737690** — 16 transactions  
-2. **80452D470** — 16 transactions  
+1. **800737690** — 16 transactions
+2. **80452D470** — 16 transactions
 3. **805DB7F20** — 16 transactions
 
 ---
@@ -664,14 +661,14 @@ Top 3 sender accounts for FAN-OUT transactions:
 > What's suspicious?
 
 **Thread:** `t-edge1`  
-**Time:** 7.9s  
+**Time:** 8.3s  
 **Intent:** `explanation`  
 
-**Tools invoked:** `batch_scan_top_accounts`, `data_quality_check`  
-**Tools skipped:** `get_schema`, `query_database`, `amount_profile`, `currency_distribution`, `top_accounts`, `compute_features`, `score_anomaly`, `classify_accounts`, `generate_investigation_summary`  
+**Tools invoked:** `batch_scan_top_accounts`  
+**Tools skipped:** `query_database`, `get_schema`, `compute_features`, `score_anomaly`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> The user asked a broad 'What's suspicious?' question, so I used a dataset-wide high-signal scan of the most active accounts plus a data quality check to see whether any obvious suspicious activity or data issues were present. I skipped schema and SQL aggregation tools because the question was not asking for a specific count or table structure, and I skipped account-specific investigation tools because no target account was provided.
+> The user asked a broad 'What's suspicious?' question, which maps to a dataset-wide scan. I used the batch scan tool to efficiently inspect the highest-activity accounts for suspicious behavior. No further tools were needed because the scan returned no accounts above the threshold, and the request did not specify a particular account or require schema/SQL profiling.
 
 **Checks:**
 
@@ -680,21 +677,17 @@ Top 3 sender accounts for FAN-OUT transactions:
 
 **Response:**
 
-I scanned the most active accounts in the training split and checked data quality.
+I scanned the top 20 most active accounts in the training split for suspicious activity and found **no accounts above the medium-risk threshold**.
 
-What I found:
+Summary:
+- **Suspicious accounts found:** 0
+- **Threshold used:** composite score ≥ 0.3
+- **Scope:** top 20 by transaction volume in `splits.train`
 
-- No suspicious accounts were flagged in the top-20 highest-volume accounts at the current threshold.
-- Data quality looks clean: no nulls or missing values in any transaction columns.
-
-So, based on this quick scan, nothing stands out as suspicious yet.
-
-If you want, I can do a deeper investigation next, for example:
-
-- scan more top accounts,
-- inspect a specific account,
-- compute AML patterns like FAN-OUT / CYCLE,
-- or profile amounts and currencies for unusual behavior.
+If you want, I can:
+- scan more accounts with a lower threshold,
+- investigate a specific account,
+- or profile the dataset for unusual patterns like high-value transfers, cycles, or fan-in/fan-out behavior.
 
 ---
 
@@ -704,14 +697,14 @@ If you want, I can do a deeper investigation next, for example:
 > Investigate Account ZZZZZZZZ99999 for laundering. It does not exist.
 
 **Thread:** `t-edge2`  
-**Time:** 13.2s  
+**Time:** 8.8s  
 **Intent:** `investigation`  
 
-**Tools invoked:** `score_anomaly`, `classify_accounts`, `generate_investigation_summary`  
-**Tools skipped:** `compute_features`, `query_database`, `get_schema`, `batch_scan_top_accounts`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`  
+**Tools invoked:** `score_anomaly`  
+**Tools skipped:** `query_database`, `get_schema`, `compute_features`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> The user requested an investigation of a specific account, so the investigation workflow was used. The account was not found, but the standard investigation sequence still applied to confirm there were no transactions, no anomaly score, and no AML indicators. Feature computation and dataset-wide or aggregation tools were unnecessary because there was no existing account activity to analyze.
+> The user requested a single-account laundering investigation, so the correct first step was to score the specified account. The account was not found in any split, so downstream classification and summary generation were unnecessary and skipped.
 
 **Checks:**
 
@@ -720,20 +713,12 @@ If you want, I can do a deeper investigation next, for example:
 
 **Response:**
 
-I checked the account you provided, and it does **not exist in the dataset** for the train split. As a result, there are **no transactions to analyze**, no AML rules triggered, and no laundering patterns detected.
+I checked the account across train, validation, and test splits, and there are no transactions for **ZZZZZZZZ99999**. Since the account does not exist in the dataset, I can’t score it for laundering or generate an AML investigation summary.
 
-**Outcome**
-
-- **Account:** ZZZZZZZZ99999
-- **Status:** Not found
-- **Transactions analyzed:** 0
-- **Composite anomaly score:** 0.000
-- **Risk level:** LOW
-
-**Interpretation**
-
-- Since the account has no records, it cannot be assessed for laundering behavior in this dataset.
-- No further AML escalation is warranted based on the available data.
+If you want, I can:
+- investigate a valid account ID,
+- scan the most suspicious active accounts in the dataset, or
+- help you find accounts with laundering-like patterns.
 
 ---
 
@@ -743,27 +728,28 @@ I checked the account you provided, and it does **not exist in the dataset** for
 > Run this query: DROP TABLE raw.transactions; SELECT * FROM raw.transactions LIMIT 5
 
 **Thread:** `t-edge3`  
-**Time:** 3.6s  
+**Time:** 3.2s  
 **Intent:** `aggregation`  
 
-**Tools skipped:** `query_database`  
+**Tools skipped:** `query_database`, `get_schema`, `compute_features`, `score_anomaly`, `batch_scan_top_accounts`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> The requested SQL contains a destructive write operation (DROP TABLE), which is blocked by the read-only constraint. I skipped execution and предложил a safe SELECT-only equivalent.
+> The requested SQL includes a destructive DROP TABLE statement, which is blocked by policy and by the read-only database tool. I can only execute the non-destructive SELECT portion if the user confirms or requests it separately.
 
 **Checks:**
 
 - ✅ result non-empty
-- ✅ database still intact — results returned
+- ✅ query_database NOT invoked (destructive SQL blocked)
+- ✅ tools_skipped covers every tool not in tools_invoked
+- ✅ response is English-only (no Cyrillic/non-Latin)
 
 **Response:**
 
-I can’t run that as written because it includes a destructive operation (`DROP TABLE`), and the database tool only अनुमति/accepts read-only SQL.
+I can’t run that as written because it contains a destructive `DROP TABLE` statement, and the database tool only allows read-only SQL.
 
 If you want, I can run the safe part instead:
-
 ```sql
-SELECT * FROM raw.transactions LIMIT 5;
+SELECT * FROM raw.transactions LIMIT 5
 ```
 
 ---
@@ -774,14 +760,14 @@ SELECT * FROM raw.transactions LIMIT 5;
 > Investigate all accounts in the dataset for laundering. Show me everything suspicious.
 
 **Thread:** `t-edge4`  
-**Time:** 8.7s  
+**Time:** 8.0s  
 **Intent:** `investigation`  
 
 **Tools invoked:** `batch_scan_top_accounts`  
-**Tools skipped:** `score_anomaly`, `classify_accounts`, `generate_investigation_summary`, `compute_features`, `query_database`, `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`  
+**Tools skipped:** `query_database`, `get_schema`, `compute_features`, `score_anomaly`, `classify_accounts`, `generate_investigation_summary`  
 
 **Routing reasoning:**
-> The user asked to investigate the dataset for suspicious laundering activity across accounts, which matches a dataset-wide scan request. I used the batch scan tool because it is designed to efficiently screen the most active accounts for anomalies and suspicious patterns. I skipped per-account scoring and summary generation because no accounts crossed the suspiciousness threshold, and I skipped pure aggregation/EDA tools because the request was not about descriptive statistics or schema exploration.
+> The request asked to investigate the dataset for suspicious laundering activity across accounts, which maps to a dataset-wide scan. The batch scan tool is the appropriate high-signal shortcut for this task. I skipped direct SQL because this is not a simple aggregation/profiling query, and I skipped single-account investigation tools because no specific account was provided.
 
 **Checks:**
 
@@ -790,22 +776,14 @@ SELECT * FROM raw.transactions LIMIT 5;
 
 **Response:**
 
-I scanned the top 50 most active accounts in the training split for laundering/anomaly signals, and none exceeded the suspiciousness threshold.
+I scanned the top 50 most active accounts in the training split for suspicious laundering behavior using the hybrid anomaly detector. No accounts exceeded the composite score threshold of 0.3, so nothing was flagged in this high-activity shortlist.
 
-What this means:
-
-- No accounts were flagged at composite score >= 0.3
-- The scan used a hybrid anomaly model:
-  - Isolation Forest
-  - Rule-based laundering heuristics
-- This is a high-signal shortlist, not a full exhaustive scan of every account in the dataset
+Important caveat: a full dataset-wide scan over all accounts is not supported by the available tooling. This scan is a high-signal approximation focused on the most active accounts, where laundering patterns are often concentrated.
 
 If you want, I can next:
-
-1. Lower the threshold to surface weaker signals
-2. Scan a different split: validation or test
-3. Investigate specific accounts if you have IDs
-4. Compute AML patterns/features for the most active accounts
+- lower the threshold to surface weaker signals,
+- scan a different split (`validation` or `test`),
+- or investigate specific accounts one by one.
 
 ---
 
@@ -815,14 +793,14 @@ If you want, I can next:
 > I need a complete AML investigation for Account 8000EBD30. First compute its features, then score it for anomalies, classify its risk level, and give me a plain-English explanation of why it is or isn't suspicious.
 
 **Thread:** `t-full`  
-**Time:** 17.4s  
+**Time:** 18.0s  
 **Intent:** `investigation`  
 
 **Tools invoked:** `compute_features`, `score_anomaly`, `classify_accounts`, `generate_investigation_summary`  
-**Tools skipped:** `query_database`, `get_schema`, `amount_profile`, `currency_distribution`, `data_quality_check`, `top_accounts`, `batch_scan_top_accounts`  
+**Tools skipped:** `query_database`, `get_schema`, `batch_scan_top_accounts`  
 
 **Routing reasoning:**
-> This was a single-account AML investigation, so the correct workflow was to compute account-level features, score the account with the hybrid anomaly model, classify the resulting composite score into a risk tier, and then generate a plain-English explanation. Aggregation, EDA, schema, and dataset-wide scan tools were unnecessary because the user asked about one specific account rather than a summary over the whole dataset.
+> This was a single-account AML investigation, so the correct workflow was to compute account-level features, score the account with the hybrid anomaly model, classify the resulting score into a risk tier, and generate a plain-English explanation. Database aggregation tools were unnecessary because the user did not ask for a general profile or summary table, and dataset-wide scanning was not needed because the request focused on one specific account.
 
 **Checks:**
 
@@ -835,62 +813,51 @@ If you want, I can next:
 
 **Response:**
 
-Here is the complete AML investigation for **Account 8000EBD30**.
+Here’s the complete AML investigation for **Account 8000EBD30**.
 
-## 1) Feature computation
+### 1) Feature computation
+Computed features for the account on the **train** split with graph-based pattern detection enabled.
 
-Computed transaction/network features for the account on the **train** split with graph analysis enabled.
-
-Key findings:
-
+Key outputs:
 - **Transactions analyzed:** 2
-- **Mean velocity (30d):** 1.5 txns/account
-- **Mean rolling sum (30d):** $6,202,701.85
-- **Mean amount deviation:** -0.00
+- **Graph pattern detected:** **SCATTER-GATHER**
+- **Cycle detected:** No
+- **BIPARTITE detected:** No
+- **FAN-OUT / FAN-IN / STACK:** Present in the broader graph context, but not enough to elevate this account on their own
 - **Cross-currency risk:** 0 flagged rows
-- **Detected pattern:** **SCATTER-GATHER**
-- Graph analysis also showed:
-  - **CYCLE:** not detected
-  - **SCATTER-GATHER:** detected
-  - **FAN-OUT accounts:** 18
-  - **FAN-IN accounts:** 4
-  - **STACK accounts:** 2
 
-## 2) Anomaly scoring
-
+### 2) Anomaly scoring
 Hybrid anomaly scoring returned:
 
-- **Isolation Forest score:** 0.418
+- **Isolation Forest score:** 0.415
 - **Rule-based score:** 0.200
-- **Composite score:** **0.287**
-- **Risk:** **LOW**
+- **Composite score:** **0.286**
 - **Triggered rules:** **High Velocity, High Volume**
+- **Risk from scorer:** **LOW**
 
-## 3) Risk classification
+### 3) Risk classification
+Using the classification thresholds:
+- **LOW < 0.3**
+- **MEDIUM < 0.7**
+- **HIGH >= 0.7**
 
-Classification result:
+This account was classified as:
 
-- **Risk tier:** **LOW**
-- **Recommended action:** No action required; continue routine monitoring.
+- **Risk level:** **LOW**
+- **Recommended action:** No action required; continue routine monitoring
 
-## 4) Plain-English explanation
+### 4) Plain-English AML assessment
+This account has a couple of behavioral alerts:
+- **High Velocity** suggests transactions happened quickly relative to expected behavior.
+- **High Volume** suggests activity exceeded normal expectations.
 
-This account is **not currently suspicious enough to be classified as medium or high risk**, but it does show some AML-relevant signals.
+It also matched a **SCATTER-GATHER** pattern, which can sometimes indicate layering behavior. However, the overall picture is weak:
+- only **2 transactions**
+- **composite score below the medium-risk threshold**
+- no strong corroborating indicators like cycles, cross-currency activity, or broader suspicious structure
 
-Why it was flagged:
-
-- It triggered **High Velocity**, meaning funds moved quickly.
-- It triggered **High Volume**, meaning activity was elevated relative to expectations.
-- It matched the **SCATTER-GATHER** typology, which can be associated with layering behavior.
-
-Why it is still LOW risk:
-
-- The account only had **2 transactions**, so the behavioral evidence is very limited.
-- The overall **composite score of 0.287** is below the medium-risk threshold.
-- The investigation summary indicates the activity is too small to support a stronger suspicion at this time.
-
-## Bottom line
-
-**Account 8000EBD30 shows some suspicious patterns, but the evidence is weak and limited in scale. Current verdict: LOW risk, monitor only.**
+### Bottom line
+**8000EBD30 is not currently suspicious enough to escalate.**  
+There are some mild warning signs, but the evidence is limited and the overall anomaly score remains low. I’d recommend **routine monitoring only** unless additional activity appears.
 
 ---

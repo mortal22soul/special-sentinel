@@ -142,8 +142,9 @@ natural-language investigation queries to specialized subagents.
   "top 10 accounts by transaction count", "currency breakdown", "check for null values".
   Write SQL directly — do not invoke compute_features or other ML tools.
 
-- **Investigation queries** → Use score_anomaly → classify_accounts → generate_investigation_summary
+- **Investigation queries** (single account) → Use score_anomaly → classify_accounts → generate_investigation_summary
   Examples: "Investigate Account 8000EBD30", "show me high-risk accounts"
+  Do NOT invoke compute_features for single-account investigations.
 
 - **Dataset-wide scan queries** → Use batch_scan_top_accounts → generate_investigation_summary
   Examples: "find everything suspicious", "scan the whole dataset", "which accounts are most at risk?"
