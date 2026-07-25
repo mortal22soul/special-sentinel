@@ -1,0 +1,21 @@
+[project]
+name = "sentinel"
+version = "0.1.0"
+description = "AI-powered Anti-Money Laundering (AML) detection system"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain",
+    "langchain-openai",
+    "langgraph",
+    "duckdb",
+    "pandas",
+    "pydantic",
+    "streamlit",
+    "scikit-learn",
+    "networkx>=3.4.2",
+    "pyvis>=0.3.2",
+    "altair>=5.3.0",
+    "python-dotenv>=1.0.0",
+    "pytest>=8.0.0",
+    "streamlit-agraph>=0.0.45",
+]

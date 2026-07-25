@@ -1,0 +1,66 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.venv-*/
+env/
+.uv/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Streamlit
+.streamlit/
+*.streamlit/
+st_cache/
+streamlit_cache/
+
+# DuckDB
+*.db
+*.duckdb
+*.duckdb.wal
+
+# ML artifacts
+*.pkl
+*.joblib
+*.h5
+*.onnx
+models/
+checkpoints/
+mlruns/
+
+# Data processing artifacts
+data/processed/
+data/cache/
+*.parquet
+*.feather
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Logs
+logs/
+*.log
+*.out
+
+*.zip
+*.csv
+*.txt
+docs/
