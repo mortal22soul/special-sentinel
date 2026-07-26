@@ -29,11 +29,9 @@ streamlit_cache/
 *.duckdb.wal
 
 # ML artifacts
-*.pkl
 *.joblib
 *.h5
 *.onnx
-models/
 checkpoints/
 mlruns/
 
@@ -60,7 +58,6 @@ logs/
 *.log
 *.out
 
-*.zip
 *.csv
 *.txt
 docs/
