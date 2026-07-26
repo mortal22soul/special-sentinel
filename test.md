@@ -1,63 +1,13 @@
-❯ uv run pytest tests/ -v
-================================================================ test session starts ================================================================
-platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.6.0 -- D:\sentinel\.venv\Scripts\python.exe
-cachedir: .pytest_cache
-rootdir: D:\sentinel
-configfile: pyproject.toml
-plugins: anyio-4.14.2, langsmith-0.10.10
-collected 42 items
+# Test Logs
 
-tests/test_features.py::TestRollingFeatures::test_rolling_sum_30d_monotonically_increases PASSED                                               [  2%]
-tests/test_features.py::TestRollingFeatures::test_rolling_sum_resets_per_account PASSED                                                        [  4%]
-tests/test_features.py::TestRollingFeatures::test_amount_deviation_zero_for_constant_amounts PASSED                                            [  7%]
-tests/test_features.py::TestRollingFeatures::test_amount_deviation_large_for_outlier PASSED                                                    [  9%]
-tests/test_features.py::TestCrossCurrencyFlag::test_same_currency_not_flagged PASSED                                                           [ 11%]
-tests/test_features.py::TestCrossCurrencyFlag::test_different_currencies_flagged PASSED                                                        [ 14%]
-tests/test_features.py::TestCrossCurrencyFlag::test_bitcoin_vs_usd_flagged PASSED                                                              [ 16%]
-tests/test_features.py::TestFanDetection::test_fan_out_detected_at_threshold PASSED                                                            [ 19%]
-tests/test_features.py::TestFanDetection::test_fan_out_below_threshold PASSED                                                                  [ 21%]
-tests/test_features.py::TestFanDetection::test_fan_in_detected_at_threshold PASSED                                                             [ 23%]
-tests/test_features.py::TestFanDetection::test_fan_in_below_threshold PASSED                                                                   [ 26%]
-tests/test_features.py::TestFanDetection::test_fan_out_not_confused_with_fan_in PASSED                                                         [ 28%]
-tests/test_features.py::TestCycleDetection::test_simple_cycle_detected PASSED                                                                  [ 30%]
-tests/test_features.py::TestCycleDetection::test_no_cycle_in_dag PASSED                                                                        [ 33%]
-tests/test_features.py::TestCycleDetection::test_self_loop_short_cycle PASSED                                                                  [ 35%]
-tests/test_features.py::TestCycleDetection::test_long_cycle_detected PASSED                                                                    [ 38%]
-tests/test_features.py::TestStackDetection::test_stack_detected_with_repeated_relay PASSED                                                     [ 40%]
-tests/test_features.py::TestStackDetection::test_stack_not_detected_with_diverse_receivers PASSED                                              [ 42%]
-tests/test_features.py::TestStackDetection::test_stack_not_detected_below_min_length PASSED                                                    [ 45%]
-tests/test_features.py::TestScatterGatherDetection::test_scatter_gather_detected PASSED                                                        [ 47%]
-tests/test_features.py::TestScatterGatherDetection::test_scatter_gather_not_detected_for_pure_fan_out PASSED                                   [ 50%]
-tests/test_features.py::TestScatterGatherDetection::test_gather_scatter_detected PASSED                                                        [ 52%]
-tests/test_features.py::TestBipartiteDetection::test_bipartite_graph_detected PASSED                                                           [ 54%]
-tests/test_features.py::TestBipartiteDetection::test_non_bipartite_graph_not_detected PASSED                                                   [ 57%]
-tests/test_features.py::TestGraphBuilder::test_edge_count_matches_unique_pairs PASSED                                                          [ 59%]
-tests/test_features.py::TestGraphBuilder::test_node_count_matches_unique_accounts PASSED                                                       [ 61%]
-tests/test_routing.py::TestSupervisorOutputSchema::test_all_required_fields_present PASSED                                                     [ 64%]
-tests/test_routing.py::TestSupervisorOutputSchema::test_schema_validates_valid_input PASSED                                                    [ 66%]
-tests/test_routing.py::TestSupervisorOutputSchema::test_execution_plan_is_list PASSED                                                          [ 69%]
-tests/test_routing.py::TestToolRegistry::test_all_expected_tools_registered PASSED                                                             [ 71%]
-tests/test_routing.py::TestToolRegistry::test_no_duplicate_tool_names PASSED                                                                   [ 73%]
-tests/test_routing.py::TestToolRegistry::test_all_tools_importable PASSED                                                                      [ 76%]
-tests/test_routing.py::TestExtractStructuredMetadata::test_parses_json_block_from_ai_message PASSED                                            [ 78%]
-tests/test_routing.py::TestExtractStructuredMetadata::test_falls_back_to_tool_message_inference PASSED                                         [ 80%]
-tests/test_routing.py::TestExtractStructuredMetadata::test_skipped_tools_are_complement_of_invoked PASSED                                      [ 83%]
-tests/test_routing.py::TestExtractStructuredMetadata::test_empty_message_list_returns_defaults PASSED                                          [ 85%]
-tests/test_routing.py::TestExtractStructuredMetadata::test_malformed_json_falls_back_gracefully PASSED                                         [ 88%]
-tests/test_routing.py::TestIntentValues::test_valid_intents_cover_all_routing_cases PASSED                                                     [ 90%]
-tests/test_routing.py::TestRiskThresholds::test_thresholds_consistent_with_plan PASSED                                                         [ 92%]
-tests/test_routing.py::TestRiskThresholds::test_escalation_action_present_for_all_tiers PASSED                                                 [ 95%]
-tests/test_routing.py::TestAnomalyWeights::test_composite_weights_match_plan PASSED                                                            [ 97%]
-tests/test_routing.py::TestAnomalyWeights::test_contamination_matches_plan PASSED                                                              [100%]
-
-================================================================ 42 passed in 9.87s =================================================================
-
-sentinel on  main [!?] is 󰏗 v0.1.0 via  v3.13.7 (sentinel) on   (ap-south-1) took 14s
 ❯ uv run python src/e2e_test.py
+
 ======================================================================
 
 Sentinel AML — End-to-End Test Suite (20 prompts)
+
 Started: 2026-07-26 16:06:12
+
 ======================================================================
 
 [01/20] 🔢 T01 — Aggregation
@@ -231,7 +181,9 @@ Started: 2026-07-26 16:06:12
     ✅ result has substantial content
 
 ======================================================================
+
 TOTAL: 20/20 tests passed
+
 ======================================================================
 
 Report saved → D:\sentinel\e2e_results.md
