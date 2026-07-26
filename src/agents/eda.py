@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from langchain.agents import create_agent
 from langchain_openai import AzureChatOpenAI
@@ -26,14 +26,14 @@ DEPLOYMENT = os.environ.get("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-5.4-mini")
 
 
 class AmountProfileInput(BaseModel):
-    split: str = Field(
+    split: Literal["transactions", "train", "validation", "test"] = Field(
         default="transactions",
         description="Which table to profile: 'transactions' (full), 'train', 'validation', or 'test'",
     )
 
 
 class CurrencyDistributionInput(BaseModel):
-    currency_col: str = Field(
+    currency_col: Literal["Receiving Currency", "Payment Currency"] = Field(
         default="Receiving Currency",
         description="Currency column to profile: 'Receiving Currency' or 'Payment Currency'",
     )
@@ -44,11 +44,11 @@ class DataQualityInput(BaseModel):
 
 
 class TopAccountsInput(BaseModel):
-    direction: str = Field(
+    direction: Literal["sender", "receiver", "both"] = Field(
         default="both",
         description="'sender' for From Account, 'receiver' for To Account, 'both' for combined",
     )
-    limit: int = Field(default=10, description="Number of top accounts to return")
+    limit: int = Field(default=10, ge=1, le=100, description="Number of top accounts to return (1–100)")
 
 
 # ── Tool implementations ─────────────────────────────────────────────────────
@@ -225,9 +225,9 @@ def top_accounts(input: TopAccountsInput) -> str:
     if input.direction in ("sender", "both"):
         lines.append("  [Senders]")
         for acct, count, total in sender_rows:
-            lines.append(f"    {acct}: {count:,} txns, ${total:,.2f} total")
+            lines.append(f"    {acct}: {count:,} txns, {total:,.2f} total (native currency)")
     if input.direction in ("receiver", "both"):
         lines.append("  [Receivers]")
         for acct, count, total in receiver_rows:
-            lines.append(f"    {acct}: {count:,} txns, ${total:,.2f} total")
+            lines.append(f"    {acct}: {count:,} txns, {total:,.2f} total (native currency)")
     return "\n".join(lines)

@@ -79,6 +79,10 @@ class TestToolRegistry:
     EXPECTED_TOOLS = {
         "query_database",
         "get_schema",
+        "amount_profile",
+        "currency_distribution",
+        "data_quality_check",
+        "top_accounts",
         "compute_features",
         "score_anomaly",
         "batch_scan_top_accounts",
@@ -99,6 +103,7 @@ class TestToolRegistry:
     def test_all_tools_importable(self) -> None:
         """Every tool in ALL_TOOL_NAMES must be importable from its module."""
         from src.agents.data_query import get_schema, query_database
+        from src.agents.eda import amount_profile, currency_distribution, data_quality_check, top_accounts
         from src.agents.features import compute_features
         from src.agents.anomaly import score_anomaly, batch_scan_top_accounts
         from src.agents.risk import classify_accounts
@@ -107,6 +112,10 @@ class TestToolRegistry:
         tool_map = {
             "query_database": query_database,
             "get_schema": get_schema,
+            "amount_profile": amount_profile,
+            "currency_distribution": currency_distribution,
+            "data_quality_check": data_quality_check,
+            "top_accounts": top_accounts,
             "compute_features": compute_features,
             "score_anomaly": score_anomaly,
             "batch_scan_top_accounts": batch_scan_top_accounts,

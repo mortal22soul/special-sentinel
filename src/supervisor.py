@@ -71,6 +71,7 @@ class SupervisorOutput(BaseModel):
 # ── Subagent tool imports ────────────────────────────────────────────────────
 
 from src.agents.data_query import get_schema, query_database
+from src.agents.eda import amount_profile, currency_distribution, data_quality_check, top_accounts
 from src.agents.features import compute_features
 from src.agents.anomaly import batch_scan_top_accounts, score_anomaly
 from src.agents.risk import classify_accounts
@@ -80,6 +81,10 @@ from src.agents.explain import generate_investigation_summary
 ALL_TOOLS = [
     query_database,
     get_schema,
+    amount_profile,
+    currency_distribution,
+    data_quality_check,
+    top_accounts,
     compute_features,
     score_anomaly,
     batch_scan_top_accounts,
@@ -100,56 +105,82 @@ natural-language investigation queries to specialized subagents.
 
 ## Available Tools & Their Purposes
 
-1. **query_database** — Execute read-only DuckDB SQL for aggregations, counts,
-   filters, and profiling queries.
-   Use for: "count transactions over $10,000", "what's the average amount?",
-   "top 10 sender accounts", "currency breakdown", "any null values?".
-   For EDA/profiling, write SQL directly — e.g.
-   `SELECT "Payment Currency", COUNT(*), ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) AS pct
-    FROM raw.transactions GROUP BY 1 ORDER BY COUNT(*) DESC`
-   for currency distribution, or `SELECT "Account", COUNT(*), SUM("Amount Paid")
-   FROM raw.transactions GROUP BY 1 ORDER BY COUNT(*) DESC LIMIT 10` for top accounts.
+1. **amount_profile** — Return min, max, mean, median, and std dev of transaction
+   amounts, broken down per payment currency. Reports native-currency statistics
+   only (no FX normalisation).
+   Use for: "what's the amount distribution?", "amount profile per currency",
+   "show me min/max/average amounts".
 
-2. **get_schema** — Get the DuckDB schema (table names, columns).
+2. **currency_distribution** — Return counts and percentages for each currency
+   column (Payment Currency or Receiving Currency).
+   Use for: "currency breakdown", "which currencies are most common?".
+
+3. **data_quality_check** — Check for nulls and missing values across all columns.
+   Use for: "check data quality", "any missing values?", "null counts".
+
+4. **top_accounts** — Return the most active accounts by transaction count,
+   with native-currency totals. Can filter by sender, receiver, or both.
+   Use for: "top 10 sender accounts", "most active accounts", "top receivers".
+
+5. **query_database** — Execute read-only DuckDB SQL for ad-hoc aggregations,
+   filters, and custom queries not covered by the profiling tools above.
+   Use for: "count transactions over $10,000", "how many laundering rows?",
+   "cross-currency transactions", custom SQL queries.
+   IMPORTANT: Do NOT use this for EDA/profiling questions that amount_profile,
+   currency_distribution, data_quality_check, or top_accounts can answer —
+   those tools return structured, per-currency results with correct caveats.
+
+6. **get_schema** — Get the DuckDB schema (table names, columns).
    Use for: understanding the database structure before writing SQL.
 
-3. **compute_features** — Compute transaction-level features (velocity, rolling sums,
+7. **compute_features** — Compute transaction-level features (velocity, rolling sums,
    amount deviation) and detect AML patterns (FAN-OUT, FAN-IN, CYCLE, STACK,
-   SCATTER-GATHER, GATHER-SCATTER, BIPARTITE, RANDOM) using networkx graph analysis.
+   SCATTER-GATHER, GATHER-SCATTER, BIPARTITE) using networkx graph analysis.
    Use for: "compute features for account X", "detect AML patterns", "find cycles".
 
-4. **score_anomaly** — Hybrid Isolation Forest + rule-based anomaly scoring for specific accounts.
+8. **score_anomaly** — Hybrid Isolation Forest + rule-based anomaly scoring for specific accounts.
    Composite = 0.4 * IF + 0.6 * Rule. Returns risk tier (LOW/MEDIUM/HIGH).
+   Rules: High Velocity, Amount Anomaly, Cross-Currency Risk, High Volume.
    Use for: "investigate account X", "score this account for anomalies".
 
-5. **batch_scan_top_accounts** — Scan the top-N most active accounts for anomalies.
+9. **batch_scan_top_accounts** — Scan the top-N most active accounts for anomalies.
    Returns a ranked suspicious account list. Capped at 50 accounts for runtime.
+   Includes both sender and receiver activity. When no model is available, runs
+   rules-only and is labelled accordingly.
    Use for: "find everything suspicious", "scan the whole dataset", "which accounts are most at risk?",
    "show me all suspicious accounts", "investigate all accounts".
 
-6. **classify_accounts** — Map composite scores to Low/Medium/High risk tiers
-   with escalation actions.
-   Use for: "classify risk for these accounts", "what's the risk level?"
+10. **classify_accounts** — Map composite scores to Low/Medium/High risk tiers
+    with escalation actions.
+    Use for: "classify risk for these accounts", "what's the risk level?"
 
-7. **generate_investigation_summary** — Generate plain-English AML Investigation
-   Summary from detection results.
-   Use for: "explain why this account is flagged", "generate investigation report".
+11. **generate_investigation_summary** — Generate plain-English AML Investigation
+    Summary from detection results.
+    Use for: "explain why this account is flagged", "generate investigation report".
 
 ## Routing Rules
 
-- **Pure aggregation/profiling queries** → Use query_database (+ get_schema if needed)
-  Examples: "count transactions over $10,000", "what's the average amount?",
-  "top 10 accounts by transaction count", "currency breakdown", "check for null values".
-  Write SQL directly — do not invoke compute_features or other ML tools.
+- **EDA / profiling queries** → Use the structured EDA tools first:
+  - Amount/volume questions → **amount_profile** (per-currency stats, no FX)
+  - Currency questions → **currency_distribution**
+  - Data quality / null checks → **data_quality_check**
+  - Top accounts by activity → **top_accounts** (sender, receiver, or both)
+  Only fall back to **query_database** for custom aggregations the EDA tools
+  cannot express.
 
-- **Investigation queries** (single account) → Use score_anomaly → classify_accounts → generate_investigation_summary
+- **Pure aggregation queries** (not covered by EDA tools) → **query_database**
+  (+ **get_schema** if needed)
+  Examples: "count transactions over $10,000", "how many laundering rows?",
+  "cross-currency transaction count", "total SUM for account X".
+
+- **Investigation queries** (single account) → **score_anomaly** → **classify_accounts** → **generate_investigation_summary**
   Examples: "Investigate Account 8000EBD30", "show me high-risk accounts"
   Do NOT invoke compute_features for single-account investigations.
 
-- **Dataset-wide scan queries** → Use batch_scan_top_accounts → generate_investigation_summary
+- **Dataset-wide scan queries** → **batch_scan_top_accounts** → **generate_investigation_summary**
   Examples: "find everything suspicious", "scan the whole dataset", "which accounts are most at risk?"
 
-- **Feature / AML pattern queries** → Use compute_features
+- **Feature / AML pattern queries** → **compute_features**
   Examples: "compute velocity for Account X", "detect FAN-OUT patterns"
 
 - **Multi-step investigations** → Invoke sequentially: compute_features → score_anomaly → classify_accounts → generate_investigation_summary
@@ -172,6 +203,9 @@ At the END of your response, after completing the task, always include a JSON bl
 - All SQL queries must be READ-ONLY (no INSERT/UPDATE/DELETE/DROP/ALTER)
 - Column names with spaces MUST be double-quoted: "Amount Paid", "Is Laundering", "From Bank", "To Bank"
 - The sender account column is "Account" (NOT "From Account"). The receiver column is "Account.1" (NOT "To Account").
+- The laundering pattern label column is "pattern_type" (NOT "Laundering Type" or "Pattern Type").
+  Values include: FAN-OUT, FAN-IN, CYCLE, STACK, SCATTER-GATHER, GATHER-SCATTER, BIPARTITE, RANDOM, UNLABELED.
+- The laundering flag column is "Is Laundering" (0 or 1).
 - Always use subqueries or CTEs correctly: columns referenced in outer SELECT must appear in GROUP BY or aggregates
 - Always explain WHY certain tools were chosen and which were skipped
 """

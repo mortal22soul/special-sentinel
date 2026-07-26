@@ -28,6 +28,7 @@ from pathlib import Path
 import altair as alt
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 from dotenv import load_dotenv
 
 # ── Bootstrap ────────────────────────────────────────────────────────────────
@@ -249,7 +250,42 @@ def render_network_graph(result_text: str, account_id: str | None = None) -> Non
     # Look for explicit "A -> B" edge notation first
     edges = re.findall(r"([0-9A-F]{7,})\s*[-–>]+\s*([0-9A-F]{7,})", result_text.upper())
 
-    # Fall back: find all account-like tokens and connect them to the queried account
+    # Fall back: query DuckDB for real transaction edges involving this account
+    if not edges and account_id:
+        try:
+            import duckdb
+            db_path = str(ROOT / "data/sentinel.duckdb")
+            con = duckdb.connect(db_path, read_only=True)
+            try:
+                rows = con.execute("""
+                    SELECT "Account", "Account.1", COUNT(*) as weight FROM splits.train
+                    WHERE "Account" = ? OR "Account.1" = ?
+                    GROUP BY "Account", "Account.1"
+                    UNION ALL
+                    SELECT "Account", "Account.1", COUNT(*) as weight FROM splits.validation
+                    WHERE "Account" = ? OR "Account.1" = ?
+                    GROUP BY "Account", "Account.1"
+                    UNION ALL
+                    SELECT "Account", "Account.1", COUNT(*) as weight FROM splits.test
+                    WHERE "Account" = ? OR "Account.1" = ?
+                    GROUP BY "Account", "Account.1"
+                    ORDER BY weight DESC
+                    LIMIT 30
+                """, [account_id, account_id, account_id, account_id, account_id, account_id]).fetchall()
+                # Include edges in both directions so the focus node has outgoing edges
+                for src, dst, weight in rows:
+                    if src == account_id:
+                        edges.append((src, dst))
+                    elif dst == account_id:
+                        edges.append((account_id, src))
+                    else:
+                        edges.append((src, dst))
+            finally:
+                con.close()
+        except Exception as exc:
+            st.caption(f"Network graph DB error: {exc}")
+
+    # Final fallback: find all account-like tokens in the text
     if not edges and account_id:
         candidates = list(
             dict.fromkeys(
@@ -300,42 +336,85 @@ def render_network_graph(result_text: str, account_id: str | None = None) -> Non
         os.unlink(tmp_path)
 
         with st.expander("🕸️ Network Graph", expanded=True):
-            st.html(html_content)
+            components.html(html_content, height=500, scrolling=True)
 
     except Exception as exc:
         st.caption(f"Network graph unavailable: {exc}")
 
 
-def render_timeline(result_text: str) -> None:
-    """Render a transaction timeline if ≥3 ISO timestamps are present."""
-    ts_pattern = re.compile(r"(\d{4}[/\-]\d{2}[/\-]\d{2}[\sT]\d{2}:\d{2})")
-    timestamps = ts_pattern.findall(result_text)
-    if len(timestamps) < 3:
+def render_timeline(result_text: str, account_id: str | None = None) -> None:
+    """Render a transaction timeline from DuckDB data for the given account."""
+    if not account_id:
         return
 
     try:
-        dates = pd.to_datetime(timestamps, errors="coerce").dropna()
-        if len(dates) < 3:
-            return
-        df = pd.DataFrame({"date": dates, "count": 1})
-        df_agg = df.groupby(df["date"].dt.date).count().reset_index()
-        df_agg.columns = ["date", "count"]
-        df_agg["date"] = pd.to_datetime(df_agg["date"])
+        import duckdb
+        db_path = str(ROOT / "data/sentinel.duckdb")
+        con = duckdb.connect(db_path, read_only=True)
+        try:
+            # Get transaction timestamps for this account
+            df = con.execute("""
+                SELECT "Timestamp", "Amount Paid" as amount
+                FROM splits.train
+                WHERE "Account" = ? OR "Account.1" = ?
+                UNION ALL
+                SELECT "Timestamp", "Amount Paid" as amount
+                FROM splits.validation
+                WHERE "Account" = ? OR "Account.1" = ?
+                UNION ALL
+                SELECT "Timestamp", "Amount Paid" as amount
+                FROM splits.test
+                WHERE "Account" = ? OR "Account.1" = ?
+                ORDER BY "Timestamp"
+            """, [account_id, account_id, account_id, account_id, account_id, account_id]).fetchdf()
+        finally:
+            con.close()
 
-        chart = (
-            alt.Chart(df_agg)
-            .mark_area(opacity=0.7, color="#3498db")
+        if df.empty or len(df) < 3:
+            return
+
+        # Parse timestamps
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+        df = df.dropna(subset=["Timestamp"])
+        if len(df) < 3:
+            return
+
+        # Group by date
+        df_daily = df.groupby(df["Timestamp"].dt.date).agg(
+            count=("Timestamp", "count"),
+            total_amount=("amount", "sum")
+        ).reset_index()
+        df_daily.columns = ["date", "count", "total_amount"]
+        df_daily["date"] = pd.to_datetime(df_daily["date"])
+
+        # Dual-axis chart: transaction count (bars) + total amount (line)
+        bars = (
+            alt.Chart(df_daily)
+            .mark_bar(opacity=0.6, color="#3498db")
             .encode(
                 x=alt.X("date:T", title="Date"),
-                y=alt.Y("count:Q", title="Transactions"),
-                tooltip=["date:T", "count:Q"],
+                y=alt.Y("count:Q", title="Transaction Count"),
+                tooltip=["date:T", "count:Q", "total_amount:Q"],
             )
-            .properties(title="Transaction Timeline", height=200)
         )
+
+        line = (
+            alt.Chart(df_daily)
+            .mark_line(color="#e74c3c", strokeWidth=2)
+            .encode(
+                x=alt.X("date:T", title="Date"),
+                y=alt.Y("total_amount:Q", title="Total Amount"),
+            )
+        )
+
+        chart = (bars + line).properties(
+            title="Transaction Timeline", height=250
+        ).resolve_scale(y="independent")
+
         with st.expander("📅 Transaction Timeline", expanded=False):
             st.altair_chart(chart, width="stretch")
-    except Exception:
-        pass
+    except Exception as exc:
+        st.caption(f"Timeline unavailable: {exc}")
 
 
 def render_explainability_panel(
@@ -404,7 +483,7 @@ def render_all_panels(answer: str, meta: dict, query: str) -> None:
     if account_id:
         render_network_graph(answer, account_id)
 
-    render_timeline(answer)
+    render_timeline(answer, account_id)
 
 
 # ── Main chat interface ───────────────────────────────────────────────────────

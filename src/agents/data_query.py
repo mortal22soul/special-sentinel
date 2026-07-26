@@ -19,6 +19,8 @@ Reads the following environment variables (set in ``.env`` or shell):
 from __future__ import annotations
 
 import os
+import re
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -48,7 +50,7 @@ class QueryInput(BaseModel):
 class SchemaInput(BaseModel):
     """Input for the schema inspection tool."""
 
-    schema_name: str = Field(
+    schema_name: Literal["raw", "splits", "all"] = Field(
         default="all",
         description=(
             "Which schema to inspect: 'raw', 'splits', or 'all' (default). "
@@ -63,38 +65,22 @@ class SchemaInput(BaseModel):
 def query_database(input: QueryInput) -> str:
     """Execute a read-only SQL query against DuckDB and return formatted results.
 
-    Blocks any write operations (INSERT, UPDATE, DELETE, DROP, ALTER, CREATE,
-    TRUNCATE, MERGE, REPLACE, COPY ... TO, GRANT, REVOKE) to protect the
-    database. Comments are stripped first so write keywords cannot be smuggled
-    past the filter as ``-- DROP TABLE``.
+    Only one SELECT or WITH query is permitted. Results are capped in the
+    database before they are materialised in Python.
     """
     import duckdb
-    import re
-
-    forbidden = {
-        "insert", "update", "delete", "drop", "alter", "create",
-        "truncate", "merge", "replace", "grant", "revoke",
-    }
-
-    # Strip line comments (-- ...) and block comments (/* ... */) so write
-    # keywords cannot be smuggled inside comments.
+    # Strip comments before validating a single query expression.
     sql_no_comments = re.sub(r"--[^\n]*", " ", input.sql)
     sql_no_comments = re.sub(r"/\*.*?\*/", " ", sql_no_comments, flags=re.DOTALL)
-
-    # Tokenise on word boundaries; flag the whole query if any forbidden
-    # keyword appears as a standalone token anywhere (including in the
-    # second statement of a semicolon-separated batch).
-    tokens = set(re.findall(r"[a-zA-Z_]+", sql_no_comments.lower()))
-    blocked = tokens & forbidden
-    if blocked:
-        raise ValueError(
-            f"Only read-only queries are allowed. Blocked keyword(s): "
-            f"{', '.join(sorted(blocked))}"
-        )
+    sql = sql_no_comments.strip()
+    if sql.endswith(";"):
+        sql = sql[:-1].rstrip()
+    if not sql or ";" in sql or not re.match(r"^(SELECT|WITH)\b", sql, re.IGNORECASE):
+        raise ValueError("Only one read-only SELECT or WITH query is allowed.")
 
     con = duckdb.connect(str(DB_PATH), read_only=True)
     try:
-        rows = con.execute(input.sql).fetchall()
+        rows = con.execute(f"SELECT * FROM ({sql}) AS sentinel_result LIMIT 100").fetchall()
         columns = [desc[0] for desc in con.description] if con.description else []
     finally:
         con.close()
@@ -106,10 +92,8 @@ def query_database(input: QueryInput) -> str:
     header = " | ".join(str(c) for c in columns)
     separator = "-+-".join("-" * len(str(c)) for c in columns)
     lines = [header, separator]
-    for row in rows[:100]:  # cap at 100 rows for readability
+    for row in rows:
         lines.append(" | ".join(str(v) for v in row))
-    if len(rows) > 100:
-        lines.append(f"... ({len(rows) - 100} more rows truncated)")
     return "\n".join(lines)
 
 

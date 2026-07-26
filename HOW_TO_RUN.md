@@ -106,11 +106,17 @@ Expected runtime: ~5s for all 42 tests.
 The anomaly agent will prompt you to train the model if
 `models/isolation_forest.pkl` doesn't exist. To pre-train:
 
+```bash
+# From the project root
+uv run python -c "from src.agents.anomaly import train_isolation_forest; train_isolation_forest(split='train', sample_size=100_000)"
+# Runtime: ~2-5 min; saves models/isolation_forest.pkl + models/scaler.pkl
+```
+
+Alternatively, from a Python REPL:
+
 ```python
-# From a Python REPL or notebook with the venv active
 from src.agents.anomaly import train_isolation_forest
 train_isolation_forest(split="train", sample_size=100_000)
-# Runtime: ~2-5 min; saves models/isolation_forest.pkl
 ```
 
 ## Project Structure

@@ -124,7 +124,7 @@ Composite Score: {input.composite_score:.3f} (ML: {input.if_score:.3f}, Rule: {i
 
 Statistics:
 - Transactions analyzed: {input.transaction_count:,}
-- Total transaction amount: ${input.total_amount:,.2f}
+- Total transaction amount: {input.total_amount:,.2f} (native currency)
 
 Triggered Rules:
 {chr(10).join(f'- {rule}' for rule in input.triggered_rules) if input.triggered_rules else '- None'}

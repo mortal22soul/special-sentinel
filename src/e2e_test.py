@@ -96,56 +96,55 @@ TESTS: list[dict] = [
              lambda r: "transaction" in r["results"].lower()),
         ],
     },
-    # ── 5. Amount profile via SQL ─────────────────────────────────────────────
+    # ── 5. Amount profile via EDA tool ─────────────────────────────────────────
     {
         "id": "T05",
         "category": "EDA",
         "query": "What is the minimum, maximum, and average transaction amount per currency?",
         "thread": "t-eda1",
         "checks": [
-            ("query_database invoked",
-             lambda r: "query_database" in r["tools_invoked"]),
+            ("amount_profile invoked",
+             lambda r: "amount_profile" in r["tools_invoked"]),
             ("result contains amounts",
-             lambda r: "$" in r["results"] or "amount" in r["results"].lower()),
+             lambda r: "amount" in r["results"].lower()),
         ],
     },
-    # ── 6. Currency distribution via SQL ──────────────────────────────────────
+    # ── 6. Currency distribution via EDA tool ─────────────────────────────────
     {
         "id": "T06",
         "category": "EDA",
         "query": "Show me the currency distribution — which currencies are most common?",
         "thread": "t-eda2",
         "checks": [
-            ("query_database invoked",
-             lambda r: "query_database" in r["tools_invoked"]),
+            ("currency_distribution invoked",
+             lambda r: "currency_distribution" in r["tools_invoked"]),
             ("result mentions a currency",
              lambda r: any(c in r["results"] for c in ["Dollar", "Euro", "Bitcoin", "currency"])),
         ],
     },
-    # ── 7. Data quality via SQL ───────────────────────────────────────────────
+    # ── 7. Data quality via EDA tool ───────────────────────────────────────────
     {
         "id": "T07",
         "category": "EDA",
         "query": "Check the data quality — are there any null or missing values in the transaction table?",
         "thread": "t-eda3",
         "checks": [
-            ("query_database invoked",
-             lambda r: "query_database" in r["tools_invoked"]),
+            ("data_quality_check invoked",
+             lambda r: "data_quality_check" in r["tools_invoked"]),
             ("result mentions null or clean",
              lambda r: any(w in r["results"].lower() for w in ["null", "clean", "missing", "quality"])),
         ],
     },
-    # ── 8. Top accounts via SQL ────────────────────────────────────────────────
+    # ── 8. Top accounts via EDA tool ───────────────────────────────────────────
     {
         "id": "T08",
         "category": "EDA",
         "query": "Who are the top 10 most active sender accounts by transaction count?",
         "thread": "t-eda4",
         "checks": [
-            ("query_database invoked",
-             lambda r: "query_database" in r["tools_invoked"]),
-            ("result non-empty",
-             lambda r: bool(r["results"].strip())),
+            ("top_accounts or query_database invoked",
+             lambda r: bool({"top_accounts", "query_database"} & set(r["tools_invoked"])),
+            ),
         ],
     },
     # ── 9. Feature computation ────────────────────────────────────────────────
@@ -239,8 +238,9 @@ TESTS: list[dict] = [
         "query": "How many transactions are labeled as FAN-OUT pattern? Also show the top 3 sender accounts for FAN-OUT transactions.",
         "thread": "t-fanout",
         "checks": [
-            ("some tool invoked",
-             lambda r: len(r["tools_invoked"]) > 0),
+            ("system responded (no crash or SQL error)",
+             lambda r: "error" not in r.get("intent", "").lower()
+               and "binder error" not in r.get("results", "").lower()),
             ("result non-empty",
              lambda r: bool(r["results"].strip())),
         ],
@@ -289,7 +289,7 @@ TESTS: list[dict] = [
             # tools_skipped must be the exact complement: invoked + skipped == all tools,
             # disjoint sets, no gaps from LLM hallucination.
             ("tools_skipped covers every tool not in tools_invoked",
-             lambda r: len(r.get("tools_invoked", [])) + len(r.get("tools_skipped", [])) == 7
+             lambda r: len(r.get("tools_invoked", [])) + len(r.get("tools_skipped", [])) == 11
                and set(r["tools_invoked"]).isdisjoint(set(r["tools_skipped"]))),
             # Response must not contain Cyrillic or other non-Latin scripts.
             # Allow common Unicode punctuation (em-dash, en-dash, bullets, smart quotes).

@@ -18,6 +18,7 @@ from __future__ import annotations
 import os
 import pickle
 from pathlib import Path
+from typing import Literal
 
 import duckdb
 import numpy as np
@@ -30,10 +31,10 @@ from sklearn.preprocessing import StandardScaler
 
 from src.agents.risk import (
     DB_PATH,
-    PATTERN_ENCODING,
     LOW_THRESHOLD,
     MEDIUM_THRESHOLD,
 )
+from src.agents.features import add_time_based_features
 
 MODEL_PATH = Path("models/isolation_forest.pkl")
 SCALER_PATH = Path("models/scaler.pkl")
@@ -51,7 +52,6 @@ IF_WEIGHT = 0.4
 FAN_THRESHOLD = 5
 CYCLE_MIN_LENGTH = 3
 STACK_MIN_LENGTH = 3
-ROLLING_WINDOW_DAYS = 30
 
 
 def _fetch_features_for_accounts(
@@ -59,7 +59,13 @@ def _fetch_features_for_accounts(
     account_ids: list[str],
     split: str = "train",
 ) -> pd.DataFrame:
-    """Fetch transaction data and compute features for a set of accounts."""
+    """Fetch transaction data and compute features for a set of accounts.
+
+    Uses the shared ``add_time_based_features`` for genuine time-indexed
+    30-calendar-day windows so training, per-account scoring, and feature
+    reports all use the same calculation.  No ground-truth labels (pattern_type)
+    are consumed here.
+    """
     table = f"splits.{split}"
     placeholders = ",".join("?" for _ in account_ids)
     query = f"""
@@ -74,34 +80,8 @@ def _fetch_features_for_accounts(
     if df.empty:
         return df
 
-    # Compute standard features
-    df["timestamp"] = pd.to_datetime(df["Timestamp"])
-    df = df.sort_values(["Account", "timestamp"])
-
-    # Velocity: 30-day rolling count per account
-    df["velocity_30d"] = (
-        df.groupby("Account")["timestamp"]
-        .apply(lambda x: x.diff().dt.days.rolling(ROLLING_WINDOW_DAYS, min_periods=1).count())
-        .reset_index(level=0, drop=True)
-    )
-
-    # Rolling sum of Amount Paid (30-day window)
-    df["rolling_sum_30d"] = (
-        df.groupby("Account")["Amount Paid"]
-        .transform(lambda x: x.rolling(ROLLING_WINDOW_DAYS, min_periods=1).sum())
-    )
-
-    # Amount deviation from account mean
-    account_means = df.groupby("Account")["Amount Paid"].transform("mean")
-    account_stds = df.groupby("Account")["Amount Paid"].transform("std")
-    df["amount_dev"] = (df["Amount Paid"] - account_means) / (account_stds + 1e-9)
-
-    # Cross-currency risk
-    df["rule_cross_currency"] = (df["Receiving Currency"] != df["Payment Currency"]).astype(int)
-
-    # Pattern type encoding (for rule-based scoring)
-    df["pattern_encoded"] = df["pattern_type"].map(PATTERN_ENCODING).fillna(0).astype(int)
-
+    # Use the shared time-based feature computation (time-indexed 30D rolling)
+    df = add_time_based_features(df)
     return df
 
 
@@ -126,21 +106,17 @@ def apply_rule_based_flags(df: pd.DataFrame) -> pd.DataFrame:
     # Rule 3: Cross-currency layering (recomputed from raw columns)
     df["rule_cross_currency"] = (df["Receiving Currency"] != df["Payment Currency"]).astype(int)
 
-    # Rule 4: Known laundering pattern type
-    df["rule_known_pattern"] = (df["pattern_encoded"] > 0).astype(int)
-
-    # Rule 5: High rolling sum (top 5% of all transactions)
+    # Rule 4: High rolling sum (top 5% of all transactions)
     rolling_95th = df["rolling_sum_30d"].quantile(0.95)
     df["rule_high_volume"] = (df["rolling_sum_30d"] > rolling_95th).astype(int)
 
-    # Composite rule score (0-5 scale)
+    # Composite rule score (0-4 scale, now 4 rules)
     df["rule_score"] = (
         df["rule_high_velocity"] +
         df["rule_amount_anomaly"] +
         df["rule_cross_currency"] +
-        df["rule_known_pattern"] +
         df["rule_high_volume"]
-    ) / 5.0  # normalize to 0-1
+    ) / 4.0  # normalize to 0-1
 
     return df
 
@@ -232,7 +208,7 @@ class AnomalyInput(BaseModel):
     account_ids: list[str] = Field(
         description="List of account IDs to score for anomalies",
     )
-    split: str = Field(
+    split: Literal["train", "validation", "test"] = Field(
         default="train",
         description="Data split to query: 'train', 'validation', or 'test'",
     )
@@ -314,9 +290,6 @@ def score_anomaly(input: AnomalyInput) -> str:
             triggered.append("Amount Anomaly")
         if acct_df["rule_cross_currency"].any():
             triggered.append("Cross-Currency Risk")
-        if acct_df["rule_known_pattern"].any():
-            pattern_types = acct_df[acct_df["rule_known_pattern"] == 1]["pattern_type"].unique()
-            triggered.append(f"Known Pattern ({', '.join(pattern_types)})")
         if acct_df["rule_high_volume"].any():
             triggered.append("High Volume")
 
@@ -349,48 +322,71 @@ def score_anomaly(input: AnomalyInput) -> str:
 class BatchScanInput(BaseModel):
     top_n: int = Field(
         default=20,
+        ge=1,
+        le=50,
         description=(
             "Number of top accounts to scan (by transaction volume). "
-            "Capped at 50 to avoid excessive runtime. "
+            "Range 1–50. "
             "Use this for 'scan the whole dataset' or 'find everything suspicious' requests."
         ),
     )
-    split: str = Field(
+    split: Literal["train", "validation", "test"] = Field(
         default="train",
         description="Data split to scan: 'train', 'validation', or 'test'",
     )
     min_composite_score: float = Field(
         default=0.3,
+        ge=0.0,
+        le=1.0,
         description="Only return accounts at or above this composite score (0.0–1.0). Default 0.3 = MEDIUM+.",
     )
 
 
 def batch_scan_top_accounts(input: BatchScanInput) -> str:
-    """Scan the top-N most active accounts for anomalies and return a ranked suspicious list.
+    """Scan the top-N most active accounts (by combined send + receive volume)
+    for anomalies and return a ranked suspicious list.
 
     Designed for 'scan the whole dataset' requests. Selects the top-N accounts
-    by transaction volume, scores each with the hybrid IF + rule-based scorer,
-    and returns all accounts above the min_composite_score threshold.
+    by combined transaction volume (as sender + receiver), scores each with the
+    hybrid IF + rule-based scorer, and returns all accounts above the
+    min_composite_score threshold.
 
     Full-dataset scanning over 500K+ accounts is intentionally not supported
     (would take hours); this tool provides a practical high-signal shortlist
     by targeting the most active accounts — where laundering is most likely to
-    appear at scale.
+    appear at scale.  Both inbound and outbound activity contribute to ranking
+    so receiver-led risk is not missed.
     """
     top_n = min(input.top_n, 50)  # hard cap
 
     con = duckdb.connect(str(DB_PATH), read_only=True)
     try:
-        # Get top-N senders by transaction count in the chosen split
         table = f"splits.{input.split}"
-        top_accts = con.execute(f"""
-            SELECT "Account", COUNT(*) as cnt
+        # Union top senders and top receivers so receiver-led accounts are included
+        top_senders = con.execute(f"""
+            SELECT "Account" AS account, COUNT(*) AS cnt
             FROM {table}
             GROUP BY "Account"
             ORDER BY cnt DESC
             LIMIT {top_n}
         """).fetchall()
-        account_ids = [r[0] for r in top_accts]
+        top_receivers = con.execute(f"""
+            SELECT "Account.1" AS account, COUNT(*) AS cnt
+            FROM {table}
+            GROUP BY "Account.1"
+            ORDER BY cnt DESC
+            LIMIT {top_n}
+        """).fetchall()
+
+        # Merge, keeping top-N by combined volume
+        acct_vol: dict[str, int] = {}
+        for acct, cnt in top_senders:
+            acct_vol[acct] = acct_vol.get(acct, 0) + cnt
+        for acct, cnt in top_receivers:
+            acct_vol[acct] = acct_vol.get(acct, 0) + cnt
+
+        ranked = sorted(acct_vol.items(), key=lambda x: x[1], reverse=True)[:top_n]
+        account_ids = [a for a, _ in ranked]
         df = _fetch_features_for_accounts(con, account_ids, input.split)
     finally:
         con.close()
@@ -400,6 +396,8 @@ def batch_scan_top_accounts(input: BatchScanInput) -> str:
 
     df = apply_rule_based_flags(df)
 
+    # Track whether we used a model or rules-only
+    model_available = True
     try:
         iso_forest, scaler = load_isolation_forest()
         feature_cols = ["velocity_30d", "rolling_sum_30d", "amount_dev", "rule_cross_currency"]
@@ -409,13 +407,16 @@ def batch_scan_top_accounts(input: BatchScanInput) -> str:
         df["if_score"] = (1 - (raw_scores + 1) / 2).clip(0, 1)
     except FileNotFoundError:
         df["if_score"] = 0.0
+        model_available = False
 
     df["composite_score"] = IF_WEIGHT * df["if_score"] + RULE_WEIGHT * df["rule_score"]
 
-    # Aggregate per account
+    # Aggregate per account — include both sender-side and receiver-side rows
     records = []
     for acct in account_ids:
-        acct_df = df[df["Account"] == acct]
+        acct_df = df[
+            (df["Account"] == acct) | (df["Account.1"] == acct)
+        ]
         if acct_df.empty:
             continue
         composite = acct_df["composite_score"].mean()
@@ -426,19 +427,22 @@ def batch_scan_top_accounts(input: BatchScanInput) -> str:
         if acct_df["rule_high_velocity"].any(): triggered.append("High Velocity")
         if acct_df["rule_amount_anomaly"].any(): triggered.append("Amount Anomaly")
         if acct_df["rule_cross_currency"].any(): triggered.append("Cross-Currency")
-        if acct_df["rule_known_pattern"].any():
-            ptypes = acct_df[acct_df["rule_known_pattern"] == 1]["pattern_type"].unique()
-            triggered.append(f"Pattern({','.join(str(p) for p in ptypes[:2])})")
         if acct_df["rule_high_volume"].any(): triggered.append("High Volume")
         records.append((composite, risk, acct, len(acct_df), triggered))
 
     records.sort(reverse=True)
 
+    # Build model label
+    if model_available:
+        model_label = f"Isolation Forest (contamination={IF_CONTAMINATION}) + Rule-based hybrid"
+    else:
+        model_label = "Rule-based only (no Isolation Forest model found)"
+
     lines = [
-        f"Batch Scan — Top-{top_n} accounts by volume in splits.{input.split}",
+        f"Batch Scan — Top-{top_n} accounts by combined volume (sender + receiver) in splits.{input.split}",
         f"Threshold: composite >= {input.min_composite_score}  |  "
         f"Found {len(records)} suspicious account(s)",
-        f"Model: Isolation Forest (contamination={IF_CONTAMINATION}) + Rule-based hybrid",
+        f"Model: {model_label}",
         f"NOTE: Full 500K-account scan not supported; this targets the highest-activity",
         f"      accounts where laundering risk is concentrated.",
         "",

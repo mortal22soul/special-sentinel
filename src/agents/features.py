@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import os
 from collections import Counter
+from typing import Literal
 
 import duckdb
 import networkx as nx
@@ -155,7 +156,7 @@ def detect_bipartite(G: nx.DiGraph) -> bool:
 
 
 class FeatureInput(BaseModel):
-    split: str = Field(
+    split: Literal["train", "validation", "test"] = Field(
         default="train",
         description="Data split to compute features on: 'train', 'validation', or 'test'",
     )
@@ -179,6 +180,77 @@ def cross_currency_flag(df: pd.DataFrame | pd.Series, account_col: str = "Accoun
     return result
 
 
+def _compute_perspective_features(
+    df: pd.DataFrame, account_col: str, prefix: str
+) -> pd.DataFrame:
+    """Add sender-side or receiver-side rolling-window features.
+
+    Computes ``velocity_30d`` and ``rolling_sum_30d`` from the perspective of
+    ``account_col`` (either ``"Account"`` for sender or ``"Account.1"`` for
+    receiver).  Results are prefixed so sender and receiver features can
+    coexist in the same DataFrame without column-name collisions.
+    """
+    if df.empty or account_col not in df.columns:
+        return pd.DataFrame(index=df.index)
+
+    tmp = df[[account_col, "Amount Paid", "Timestamp"]].copy()
+    tmp.columns = ["account", "amount", "timestamp"]
+    tmp["timestamp"] = pd.to_datetime(tmp["timestamp"])
+    tmp = tmp.sort_values(["account", "timestamp"])
+
+    def _add_rolling(group: pd.DataFrame) -> pd.DataFrame:
+        group = group.sort_values("timestamp").copy()
+        indexed = group.set_index("timestamp")
+        group[f"{prefix}_velocity_30d"] = (
+            indexed["amount"].rolling("30D", min_periods=1).count().to_numpy()
+        )
+        group[f"{prefix}_rolling_sum_30d"] = (
+            indexed["amount"].rolling("30D", min_periods=1).sum().to_numpy()
+        )
+        return group
+
+    result = tmp.groupby("account", group_keys=False).apply(_add_rolling)
+    return result[[f"{prefix}_velocity_30d", f"{prefix}_rolling_sum_30d"]]
+
+
+def add_time_based_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Add sender-side and receiver-side rolling 30-calendar-day features.
+
+    The same implementation is shared by the feature report and anomaly
+    scorer so a displayed feature always matches the feature given to the ML
+    model.  Monetary values remain native units and are never compared across
+    currencies here.
+    """
+    if df.empty:
+        return df
+
+    result = df.copy()
+    result["timestamp"] = pd.to_datetime(result["Timestamp"])
+
+    # Sender-side features (Account → Account.1)
+    sender_feats = _compute_perspective_features(result, "Account", "sender")
+    # Receiver-side features (Account.1 ← Account)
+    receiver_feats = _compute_perspective_features(result, "Account.1", "receiver")
+
+    result = pd.concat([result, sender_feats, receiver_feats], axis=1)
+
+    # Backwards-compatible aliases: velocity_30d / rolling_sum_30d default to
+    # the sender-side values so existing callers (e.g. anomaly.py IF training)
+    # that reference those column names keep working.
+    result["velocity_30d"] = result["sender_velocity_30d"]
+    result["rolling_sum_30d"] = result["sender_rolling_sum_30d"]
+
+    # Amount deviation from account mean (sender-side, as before)
+    account_means = result.groupby("Account")["Amount Paid"].transform("mean")
+    account_stds = result.groupby("Account")["Amount Paid"].transform("std")
+    result["amount_dev"] = (result["Amount Paid"] - account_means) / (account_stds + 1e-9)
+
+    result["cross_currency_risk"] = (
+        result["Receiving Currency"] != result["Payment Currency"]
+    ).astype(int)
+    return result
+
+
 def compute_features(input: FeatureInput) -> str:
     """Compute transaction-level features for AML pattern detection.
 
@@ -188,12 +260,19 @@ def compute_features(input: FeatureInput) -> str:
 
     con = duckdb.connect(str(DB_PATH), read_only=True)
     try:
-        # Fetch all labeled transactions from the split
+        # Account-specific requests must never silently fall back to the full
+        # split.  For an exploratory whole-split report, use the labelled rows
+        # to keep graph work bounded.
         table = f"splits.{input.split}"
-        df = con.execute(f"""
-            SELECT * FROM {table}
-            WHERE pattern_type != 'UNLABELED'
-        """).fetchdf()
+        if input.account_ids:
+            placeholders = ",".join("?" for _ in input.account_ids)
+            df = con.execute(
+                f'''SELECT * FROM {table}
+                    WHERE "Account" IN ({placeholders}) OR "Account.1" IN ({placeholders})''',
+                input.account_ids * 2,
+            ).fetchdf()
+        else:
+            df = con.execute(f"SELECT * FROM {table} WHERE pattern_type != 'UNLABELED'").fetchdf()
     finally:
         con.close()
 
@@ -201,37 +280,17 @@ def compute_features(input: FeatureInput) -> str:
         return "No labeled transactions found in the requested split."
 
     total = len(df)
-    results = [f"Features computed on {total:,} labeled rows from splits.{input.split}:"]
-
-    # --- Standard features ---
-    df["timestamp"] = pd.to_datetime(df["Timestamp"])
-    df = df.sort_values(["Account", "timestamp"])
-
-    # Velocity: transactions in past 30 days per account
-    df["velocity_30d"] = (
-        df.groupby("Account")["timestamp"]
-        .apply(lambda x: x.diff().dt.days.lt(30).cumsum())
-        .reset_index(level=0, drop=True)
-    )
-
-    # Rolling sum of Amount Paid (30-day window per account)
-    df["rolling_sum_30d"] = (
-        df.groupby("Account")["Amount Paid"]
-        .transform(lambda x: x.rolling(30, min_periods=1).sum())
-    )
-
-    # Amount deviation from account mean
-    account_means = df.groupby("Account")["Amount Paid"].transform("mean")
-    account_stds = df.groupby("Account")["Amount Paid"].transform("std")
-    df["amount_dev"] = (df["Amount Paid"] - account_means) / (account_stds + 1e-9)
+    scope = f"accounts {', '.join(input.account_ids)}" if input.account_ids else "labelled rows"
+    results = [f"Features computed on {total:,} rows for {scope} from splits.{input.split}:"]
+    df = add_time_based_features(df)
 
     results.append(f"\nStandard Features:")
     results.append(f"  Mean velocity (30d): {df['velocity_30d'].mean():.1f} txns/account")
-    results.append(f"  Mean rolling sum (30d): ${df['rolling_sum_30d'].mean():,.2f}")
+    results.append("  Mean rolling sum (30d): native-currency values; cross-currency mean not reported")
     results.append(f"  Mean amount deviation: {df['amount_dev'].mean():.2f}")
 
     # --- Cross-currency risk (rule_cross_currency matches anomaly.py naming) ---
-    df["rule_cross_currency"] = (df["Receiving Currency"] != df["Payment Currency"]).astype(int)
+    df["rule_cross_currency"] = df["cross_currency_risk"]
     cc_count = df["rule_cross_currency"].sum()
     results.append(f"\nCross-Currency Risk:")
     results.append(f"  Flagged rows: {cc_count:,} ({cc_count/total:.1%})")
